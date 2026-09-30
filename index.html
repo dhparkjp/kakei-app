@@ -155,6 +155,16 @@ html,body{overflow-x:hidden}
   .dd-chart{height:200px}
   .detail{padding:6px 10px 10px}
 }
+#oneline{margin:0 0 22px;font-size:15px;font-weight:500;line-height:1.6;color:var(--band-ink)}
+#oneline b{font-family:Manrope,"Noto Sans JP",sans-serif;font-weight:800}
+@media (max-width:640px){#oneline{font-size:13px;margin-bottom:16px}}
+.trip{border-bottom:1px solid var(--line);padding:12px 0;cursor:pointer}
+.trip .top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:baseline}
+.trip .nm{font-weight:700;font-size:14px}
+.trip .dt{color:var(--ink3);font-size:12px}
+.trip .amt{font-family:Manrope,sans-serif;font-weight:800;font-size:16px;text-align:right}
+.trip .cats{grid-column:1/-1;color:var(--ink2);font-size:12px}
+.trip .detail{margin-top:10px}
 
 #lock{position:fixed;inset:0;z-index:50;background:#0f0f0f;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;padding-top:calc(24px + env(safe-area-inset-top,0px))}
 #lock[hidden]{display:none!important}
@@ -187,7 +197,7 @@ html,body{overflow-x:hidden}
     <button data-p="tx">明細</button>
   </nav>
 </div></header>
-<div class="band"><div class="wrap"><div class="hero" id="hero"></div></div></div>
+<div class="band"><div class="wrap"><p id="oneline"></p><div class="hero" id="hero"></div></div></div>
 <main><div class="wrap">
   <section id="p-summary" class="panel on">
     <section class="block"><h2 data-ic="flow">月次の流れ</h2><p class="note">収入・支出・投資積立を円ベースで表示。ウォンはMOINの実勢レートで換算。破線は手元に残るお金（収入 − 支出 − 投資）。＊の月は給与の入金記録待ち</p><div id="c-flow" class="chart tall"></div><div class="legend"><span><i style="--sw:var(--f1)"></i>収入</span><span><i style="--sw:var(--f3)"></i>支出</span><span><i style="--sw:var(--f5);outline:1px solid var(--line2)"></i>投資積立</span><span><i class="dash"></i>手元に残るお金</span></div></section>
@@ -204,6 +214,7 @@ html,body{overflow-x:hidden}
   <section id="p-expense" class="panel">
     <div class="figs" id="figs-expense"></div>
     <section class="block"><h2 data-ic="expense" id="h-daily">日別の支出</h2><p class="note">カードと韓国口座の利用分を日ごとに集計。生活費・仕送りなど月単位の項目は含まない。棒にカーソル（スマホはタップ）でその日の内訳</p><div id="c-daily" class="chart"></div></section>
+    <section class="block" id="s-trips"><h2 data-ic="여행">旅行ごとの支出</h2><p class="note">旅行の期間中にその地域で使ったお金と、事前に払った宿・交通をまとめたもの。タップで明細</p><div id="trips"></div></section>
     <section class="block" id="s-trend" hidden><h2 data-ic="flow">主要カテゴリの推移</h2><p class="note">今月上位5カテゴリの月別金額（カード明細がそろった月）</p><div id="c-cat-lines" class="chart tall"></div></section>
     <div class="two">
       <section class="block"><h2 data-ic="list">カテゴリ別</h2><div class="bars" id="b-cat-all"></div></section>
@@ -289,7 +300,7 @@ const CLS={'NISA':'NISA','크립토':'暗号資産','예금':'預金','현금':'
 const INC={'チームJカーブ':'副業（チームJカーブ）','韓国の子育て手当':'韓国の子育て手当','税金の還付':'税金の還付','CMKR':'給与（CMKR）','Ople':'事業所得（Ople）','児童手当':'児童手当','育児休業給付金':'育児休業給付金','物価高対応給付金':'物価高対応給付金（吉見町）'};
 const ITEM={'가정 생활비(와이프)':'生活費（妻へ）','유치원비(생활비 내)':'幼稚園（生活費内）','용돈(본인)':'おこづかい（自分）','부모님 용돈(자동이체)':'両親への仕送り（自動振込）','자동차 할부(トヨタファイナンス)':'車のローン（トヨタファイナンス）','자동차 보험(ソンポジャパン)':'自動車保険（損保ジャパン）','NISA 적립(三菱UFJ카드)':'NISA積立（三菱UFJカード）','회사경비 정산(CMKR)':'経費精算（CMKR）','신한ATM입금(현금 환급)':'家族からの現金（ATM入金）','국민ATM입금(현금 환급)':'家族からの現金（ATM入金）'};
 const ja=(k,map)=>map[k]||k;
-const MERCH=[['광진정플란트치과','光津プラント歯科（インプラント）'],['에어로케이항공-에어로케이항공주식회사','エアロK 航空券'],['카카오T_렌터카-카카오모빌리티','カカオT レンタカー'],['쿠팡(쿠페이)-쿠팡(쿠페이)','クーパン'],['쿠팡이츠-쿠팡이츠','クーパンイーツ'],['김광선(청주렌트카)','清州レンタカー'],['ATM출금','ATM引き出し（韓国）'],['인터넷상거래-설로인주식회사','ソルロイン（精肉ネット通販）'],['카카오T일반택시_0','カカオタクシー'],['115호3724도공','高速道路料金（韓国）'],['김동임','個人送金（キム・ドンイム）'],['이규미(영등포빨간오','個人送金（イ・ギュミ）']];
+const MERCH=[['광진정플란트치과','光津プラント歯科（虫歯治療）'],['에어로케이항공-에어로케이항공주식회사','エアロK 航空券'],['카카오T_렌터카-카카오모빌리티','カカオT レンタカー'],['쿠팡(쿠페이)-쿠팡(쿠페이)','クーパン'],['쿠팡이츠-쿠팡이츠','クーパンイーツ'],['김광선(청주렌트카)','清州レンタカー'],['ATM출금','ATM引き出し（韓国）'],['인터넷상거래-설로인주식회사','ソルロイン（精肉ネット通販）'],['카카오T일반택시_0','カカオタクシー'],['115호3724도공','高速道路料金（韓国）'],['김동임','個人送金（キム・ドンイム）'],['이규미(영등포빨간오','個人送金（イ・ギュミ）']];
 const jn=n=>(ITEM[n]||MERCH.reduce((a,[k,v])=>a.replace(k,v),n).normalize('NFKC')).replace(/\(할부 (\d+\/\d+)\)/,'（分割 $1）').replace(/\(현금 환급\)/,'（現金の返金）');
 const dn=t=>t.source==='manual'?jn(t.name):(t.display||jn(t.name));
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -373,6 +384,7 @@ function renderHero(){
   el('hero').innerHTML=hero('手元に残るお金',yen(net),complete(M)?'収入 − 支出 − 投資積立':'給与の入金記録待ち','net')+hero('収入',yen(inc),p&&complete(p)?delta(inc,D.income[p].total_jpy):'給与・事業所得・児童手当','income')+hero('支出',yen(exp),p&&complete(p)?delta(exp,D.expense[p].total_jpy):'日本＋韓国、円換算','expense')+hero('投資積立',yen(inv),'NISA・暗号資産','invest')+(am?hero('投資資産',yen(av),mlabel(am)+'末','asset'):'')+HERO_ART;
 }
 function render(){
+  try{renderOneline()}catch(e){}
   document.querySelectorAll('h2,.note').forEach(h=>{const n=[...h.childNodes].filter(x=>x.nodeType===3).pop();if(!n)return;if(!h.dataset.t)h.dataset.t=n.textContent;n.textContent=M==='__range'?h.dataset.t.replace(/今月/g,'期間内'):h.dataset.t});
   renderHero();
   const on=document.querySelector('.panel.on').id;
@@ -414,7 +426,28 @@ function renderSummary(){
   } else el('s-diff').style.display='none';
 }
 
+function tripsIn(){const a=M==='__range'?R1:M,b=M==='__range'?R2:M;return (D.trips||[]).filter(t=>t.start.slice(0,7)<=b&&t.end.slice(0,7)>=a);}
+function renderTrips(){
+  const ts=tripsIn();el('s-trips').hidden=!ts.length;if(!ts.length)return;
+  el('trips').innerHTML=ts.map((t,i)=>{const cats=Object.entries(t.by_category).filter(([,v])=>v>0).slice(0,4).map(([k,v])=>ja(k,CAT)+' '+yen(v)).join('・');
+    return `<div class="trip" data-i="${i}"><div class="top"><span><span class="nm">${t.name}</span> <span class="dt">${t.start.slice(5).replace('-','/')}〜${t.end.slice(5).replace('-','/')}・${t.count}件</span></span><span class="amt">${yen(t.total_jpy)}</span><span class="cats">${cats}</span></div><div class="detail"></div></div>`}).join('');
+  el('trips').querySelectorAll('.trip').forEach(x=>x.onclick=()=>{const t=ts[+x.dataset.i],d=x.querySelector('.detail');const on=d.classList.toggle('on');if(!on)return;
+    const rows=D.transactions.filter(r=>r.trip===t.name).sort((a,b)=>a.date<b.date?-1:1);
+    d.innerHTML=`<table>${rows.map(r=>`<tr><td class="muted">${r.date.slice(5)}</td><td class="name">${dn(r)}</td><td class="muted">${ja(r.category,CAT)}</td><td class="n">${yen(r.jpy)}</td></tr>`).join('')}</table>`;});
+}
+function renderOneline(){
+  const inc=D.income[M].total_jpy,exp=D.expense[M].total_jpy,inv=D.invest[M].total_jpy,net=inc-exp-inv;
+  const lbl=M==='__range'?mlabel(M):parseInt(M.slice(5))+'月';
+  if(!complete(M)){el('oneline').innerHTML=`${lbl}は給与の入金待ちで集計中。いまのところ支出は <b>${yen(exp)}</b>。`;return}
+  const pn=v=>v>=0?`<b>${yen(v)}</b> の黒字`:`<b>${yen(-v)}</b> の赤字`;
+  const tr=D.transactions.filter(t=>t.trip&&inM(t.month));const tSum=tr.reduce((a,t)=>a+t.jpy,0);
+  if(tSum>=30000){const names=[...new Set(tr.map(t=>t.trip))].join('・');el('oneline').innerHTML=`${lbl}は${pn(net)}。旅行（${names}）に <b>${yen(tSum)}</b>、旅行を除くと${pn(net+tSum)}。`;return}
+  const p=prev(M);if(p){const a=D.expense[M].by_category,b=D.expense[p].by_category;const d=Object.keys({...a,...b}).map(k=>[k,(a[k]||0)-(b[k]||0)]).filter(([k])=>!['경비정산','가족정산'].includes(k)).sort((x,y)=>Math.abs(y[1])-Math.abs(x[1]))[0];
+    if(d&&Math.abs(d[1])>=10000){el('oneline').innerHTML=`${lbl}は${pn(net)}。先月との差がいちばん大きいのは${ja(d[0],CAT)}（${d[1]>0?'+':'−'}${yen(Math.abs(d[1]))}）。`;return}}
+  el('oneline').innerHTML=`${lbl}は${pn(net)}。`;
+}
 function renderExpense(){
+  renderTrips();
   const ms=D.months,F=FILLS(),e=D.expense[M],p=prev(M);
   const jp=e.by_region.JP||0,kr=e.by_region.KR||0;
   el('figs-expense').innerHTML=fig('支出合計',yen(e.total_jpy),p&&complete(p)?delta(e.total_jpy,D.expense[p].total_jpy):'精算・返金を差し引いた額','','expense')+fig('日本',yen(jp),'支出の '+Math.round(jp/(e.total_jpy||1)*100)+'%')+fig('韓国',yen(kr),'支出の '+Math.round(kr/(e.total_jpy||1)*100)+'%')+fig('固定費',yen(e.fixed_jpy),'支出の '+Math.round(e.fixed_jpy/(e.total_jpy||1)*100)+'%')+fig('変動費',yen(e.variable_jpy),'支出の '+Math.round(e.variable_jpy/(e.total_jpy||1)*100)+'%');

@@ -165,6 +165,14 @@ html,body{overflow-x:hidden}
 .trip .amt{font-family:Manrope,sans-serif;font-weight:800;font-size:16px;text-align:right}
 .trip .cats{grid-column:1/-1;color:var(--ink2);font-size:12px}
 .trip .detail{margin-top:10px}
+#budget .big{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:14px;flex-wrap:wrap}
+#budget .big b{font-family:Manrope,sans-serif;font-weight:800;font-size:26px}
+#budget .gauge{height:12px;background:var(--f5);margin:12px 0 8px;position:relative;overflow:hidden}
+#budget .gauge i{position:absolute;left:0;top:0;bottom:0;background:var(--ink)}
+#budget .gauge i.trip{background:var(--f3)}
+#budget .gauge.over{outline:2px solid var(--pos);outline-offset:-2px}
+#budget .row{display:flex;justify-content:space-between;font-size:12px;color:var(--ink2);padding:3px 0}
+#outlook table td.n b{font-family:Manrope,sans-serif;font-weight:800;font-size:15px}
 
 #lock{position:fixed;inset:0;z-index:50;background:#0f0f0f;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;padding-top:calc(24px + env(safe-area-inset-top,0px))}
 #lock[hidden]{display:none!important}
@@ -200,6 +208,8 @@ html,body{overflow-x:hidden}
 <div class="band"><div class="wrap"><p id="oneline"></p><div class="hero" id="hero"></div></div></div>
 <main><div class="wrap">
   <section id="p-summary" class="panel on">
+    <div class="two"><section class="block" id="s-budget"><h2 data-ic="net">今月の予算</h2><p class="note">基本収入（育休給付・一時的な手当を除く）から固定費とNISA積立を引いた残りが、使える変動費</p><div id="budget"></div></section>
+    <section class="block" id="s-outlook"><h2 data-ic="flow">育休給付がなくなった後の見通し</h2><p class="note" id="n-outlook"></p><div id="outlook"></div></section></div>
     <section class="block"><h2 data-ic="flow">月次の流れ</h2><p class="note">収入・支出・投資積立を円ベースで表示。ウォンはMOINの実勢レートで換算。破線は手元に残るお金（収入 − 支出 − 投資）。＊の月は給与の入金記録待ち</p><div id="c-flow" class="chart tall"></div><div class="legend"><span><i style="--sw:var(--f1)"></i>収入</span><span><i style="--sw:var(--f3)"></i>支出</span><span><i style="--sw:var(--f5);outline:1px solid var(--line2)"></i>投資積立</span><span><i class="dash"></i>手元に残るお金</span></div></section>
     <div class="two">
       <section class="block"><h2 data-ic="expense">今月の支出（金額順）</h2><div class="bars" id="b-cat"></div></section>
@@ -215,11 +225,9 @@ html,body{overflow-x:hidden}
     <div class="figs" id="figs-expense"></div>
     <section class="block"><h2 data-ic="expense" id="h-daily">日別の支出</h2><p class="note">カードと韓国口座の利用分を日ごとに集計。生活費・仕送りなど月単位の項目は含まない。棒にカーソル（スマホはタップ）でその日の内訳</p><div id="c-daily" class="chart"></div></section>
     <section class="block" id="s-trips"><h2 data-ic="여행">旅行ごとの支出</h2><p class="note">旅行の期間中にその地域で使ったお金と、事前に払った宿・交通をまとめたもの。タップで明細</p><div id="trips"></div></section>
-    <section class="block" id="s-trend" hidden><h2 data-ic="flow">主要カテゴリの推移</h2><p class="note">今月上位5カテゴリの月別金額（カード明細がそろった月）</p><div id="c-cat-lines" class="chart tall"></div></section>
     <div class="two">
       <section class="block"><h2 data-ic="list">カテゴリ別</h2><div class="bars" id="b-cat-all"></div></section>
       <div>
-        <section class="block"><h2 data-ic="net">支払い方法</h2><div class="bars" id="b-method"></div></section>
         <section class="block"><h2 data-ic="merchant">利用先トップ20</h2><div class="tablewrap"><table id="t-merchants"></table></div></section>
         <section class="block"><h2 data-ic="미분류">未分類</h2><p class="note">rules/categories.csv にキーワードを足すと次回集計から分類される</p><div class="tablewrap"><table id="t-unclassified"></table></div></section>
       </div>
@@ -229,12 +237,12 @@ html,body{overflow-x:hidden}
   <section id="p-income" class="panel">
     <div class="figs" id="figs-income"></div>
     <div class="two"><section class="block"><h2 data-ic="income">今月の収入 内訳</h2><div class="bars" id="b-inc"></div></section><section class="block" id="s-inc-trend" hidden><h2 data-ic="flow">月別の収入</h2><p class="note">給与の入金がそろった月のみ</p><div id="c-inc" class="chart"></div><div class="legend" id="lg-inc"></div></section></div>
-    <section class="block" id="s-fx"><h2 data-ic="fx">円換算レート（円 / 100ウォン）</h2><p class="note">ウォンの収入・支出はMOINの実勢レートで円に換算。MOIN送金があった月はその実効レート、ない月は市場平均レートからMOINの平均スプレッド分を差し引いた推定値</p><div id="c-fx" class="chart short"></div><div class="legend"><span><i style="--sw:var(--ink)"></i>換算に使ったレート</span><span><i class="dash" style="border-top-color:var(--ink3)"></i>市場平均（参考）</span></div></section>
+    <section class="block" id="s-salary"><h2 data-ic="flow">給与の推移（ウォン建て）</h2><p class="note">振込額（手取り）の月別。為替の影響を除くためウォンで表示。＊は賞与込み、▲は昇給</p><div id="c-salary" class="chart"></div><div class="legend" id="lg-salary"></div></section>
   </section>
 
   <section id="p-assets" class="panel">
     <div class="figs" id="figs-assets"></div>
-    <section class="block" id="s-asset-trend"><h2 data-ic="invest">投資資産の推移</h2><p class="note">月末の評価額。銀行残高は含まない</p><div id="c-assets" class="chart tall"></div><div class="legend" id="lg-assets"></div></section>
+    <section class="block" id="s-asset-trend"><h2 data-ic="invest">投資資産の推移</h2><p class="note">月末の評価額と、これまでに入れた元本（破線）。差が評価益。元本は9月の保有明細から毎月の積立額を逆算した推定値</p><div id="c-assets" class="chart tall"></div><div class="legend" id="lg-assets"></div></section>
     <div class="two"><section class="block"><h2 data-ic="asset">銘柄別</h2><p class="note" id="n-assets"></p><div class="bars" id="b-assets"></div></section><section class="block"><h2 data-ic="rate">構成比</h2><p class="note">カーソル（スマホはタップ）で金額</p><div class="dd" style="margin-top:14px;align-items:center"><div id="c-donut" style="width:260px;height:260px;flex:none"></div><div class="legend" id="lg-donut" style="flex-direction:column;gap:8px;flex:1;min-width:0"></div></div></section></div>
     <section class="block"><h2 data-ic="asset">保有内訳</h2><div class="tablewrap"><table id="t-assets"></table></div></section>
   </section>
@@ -392,7 +400,30 @@ function render(){
   setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),0);
 }
 
+const ONEOFF=['育児休業給付金','物価高対応給付金','韓国の子育て手当','税金の還付'];
+function baseIncome(m){return Object.entries(D.income[m].by_source).filter(([k])=>!ONEOFF.includes(k)).reduce((a,[,v])=>a+v.jpy,0)}
+function tripSpend(m){return D.transactions.filter(t=>t.trip&&(m==='__range'?inM(t.month):t.month===m)).reduce((a,t)=>a+t.jpy,0)}
+function renderBudget(){
+  const e=D.expense[M],bi=baseIncome(M),inv=D.invest[M].total_jpy,avail=bi-e.fixed_jpy-inv,used=e.variable_jpy,tr=tripSpend(M);
+  const pct=avail>0?used/avail:9,over=used-avail;
+  el('budget').innerHTML=`<div class="big"><span>使える変動費 <b>${yen(Math.max(avail,0))}</b></span><span>使った <b>${yen(used)}</b></span></div>
+   <div class="gauge ${over>0?'over':''}"><i style="width:${Math.min(1,Math.max(0,(used-tr)/Math.max(avail,1)))*100}%"></i><i class="trip" style="left:${Math.min(1,(used-tr)/Math.max(avail,1))*100}%;width:${Math.max(0,Math.min(1,used/Math.max(avail,1))-Math.min(1,(used-tr)/Math.max(avail,1)))*100}%"></i></div>
+   <div class="row"><span>${over>0?`<span style="color:var(--pos);font-weight:700">${yen(over)} オーバー</span>`:`残り ${yen(-over)}`}（${Math.round(pct*100)}%）</span><span>${tr?`うち旅行 ${yen(tr)}（灰色）`:''}</span></div>
+   <div class="row" style="border-top:1px solid var(--line);margin-top:8px;padding-top:8px"><span>基本収入</span><span>${yen(bi)}</span></div>
+   <div class="row"><span>− 固定費（生活費・仕送り・車・通信など）</span><span>${yen(e.fixed_jpy)}</span></div>
+   <div class="row"><span>− NISA積立</span><span>${yen(inv)}</span></div>`;
+  const cms=D.months.filter(m=>complete(m)),n=cms.length;if(!n){el('s-outlook').hidden=true;return}
+  const avg=f=>cms.reduce((a,m)=>a+f(m),0)/n;
+  const B=avg(baseIncome),FX=avg(m=>D.expense[m].fixed_jpy),V=avg(m=>D.expense[m].variable_jpy),T=avg(tripSpend);
+  const cell=v=>`<b style="font:inherit;font-weight:800;color:var(${v>=0?'--pos':'--neg'})">${v>=0?'+':'−'}${yen(Math.abs(v))}</b>`;
+  el('n-outlook').textContent=`${parseInt(cms[0].slice(5))}〜${parseInt(cms[n-1].slice(5))}月の平均（基本収入 ${man(B)}・固定費 ${man(FX)}・変動費 ${man(V)}、うち旅行 ${man(T)}）で試算した毎月の収支`;
+  el('outlook').innerHTML=`<table><tr><th></th><th class="n">NISA 20万</th><th class="n">NISA 10万</th></tr>
+   <tr><td>旅行込み</td><td class="n">${cell(B-FX-V-200000)}</td><td class="n">${cell(B-FX-V-100000)}</td></tr>
+   <tr><td>旅行を除く</td><td class="n">${cell(B-FX-(V-T)-200000)}</td><td class="n">${cell(B-FX-(V-T)-100000)}</td></tr></table>
+   <p class="note" style="margin-top:10px">プラスなら毎月貯金が増え、マイナスなら預金を取り崩すペース</p>`;
+}
 function renderSummary(){
+  renderBudget();
   const ms=D.months,F=FILLS();
   chart('c-flow',{...base(),xAxis:xcat(ms),yAxis:yval(),
     series:[
@@ -463,13 +494,7 @@ function renderExpense(){
   chart('c-daily',{...base(),grid:{left:56,right:16,top:20,bottom:28},tooltip:{...base().tooltip,trigger:'axis',formatter:ps=>{const i=ps[0].dataIndex,x=byDay[i];const top=[...x.items].sort((a,b)=>b.jpy-a.jpy).slice(0,4);return `<b>${single?Mo+'月'+(i+1)+'日':mlabel(rms[i])}</b>　${yen(x.sum)}<br>`+top.map(t=>`${dn(t).slice(0,20)}　${yen(t.jpy)}`).join('<br>')+(x.items.length>4?`<br>他 ${x.items.length-4} 件`:'')}},
     xAxis:{type:'category',data:byDay.map((_,i)=>single?i+1:mshort(rms[i])),axisLine:{lineStyle:{color:css('--line2')}},axisTick:{show:false},axisLabel:{color:css('--ink2'),fontFamily:font,interval:0,formatter:v=>single?((v==1||v%5==0)?v:''):v}},yAxis:yval(),
     series:[{type:'bar',data:byDay.map(x=>({value:x.sum,itemStyle:{color:x.sum>=dmax*0.5?css('--f1'):css('--f3')}})),barCategoryGap:'30%',label:{show:true,position:'top',color:css('--ink'),fontFamily:font,fontSize:11,formatter:p=>p.value>=dmax*0.5?man(p.value):''}}]});
-  // 推移 (3か月以上)
-  const cms=ms.filter(m=>'rakuten' in D.expense[m].by_method&&D.months.indexOf(m)<D.months.length-1);
-  el('s-trend').hidden=cms.length<3;
-  if(cms.length>=3)chart('c-cat-lines',{...base(),grid:{left:56,right:130,top:24,bottom:28},xAxis:xcat(cms),yAxis:yval(),
-    series:top.map((c,i)=>({name:ja(c,CAT),type:'line',data:cms.map(m=>D.expense[m].by_category[c]||0),itemStyle:{color:F[Math.min(i,3)]},lineStyle:{width:2,type:dashes[i]},symbol:'circle',symbolSize:7,endLabel:{show:true,formatter:ja(c,CAT),color:css('--ink'),fontFamily:font,offset:[6,0]},labelLayout:{moveOverlap:'shiftY'}}))});
   bars('b-cat-all',all,all.filter(([,v])=>v>0).reduce((a,[,v])=>a+v,0));
-  bars('b-method',Object.entries(e.by_method).sort((a,b)=>b[1]-a[1]),e.total_jpy,{label:k=>ja(k,SRC),kr:k=>['kbcard','kakao'].includes(k),field:'source'});
   const mr=D.merchants[M];
   el('t-merchants').innerHTML='<tr><th>利用先</th><th>分類</th><th class="n">件</th><th class="n">金額</th></tr>'+(mr.length?mr.map(r=>`<tr><td class="name">${jn(r.name)}</td><td class="muted">${ja(r.category,CAT)}</td><td class="n">${r.count}</td><td class="n">${yen(r.jpy)}</td></tr>`).join(''):'<tr><td colspan="4" class="empty">カード明細なし</td></tr>');
   const un=D.unclassified[M];
@@ -494,10 +519,15 @@ function renderIncome(){
   if(ims.length>=2){const main=srcs.slice(0,4),rest=srcs.slice(4);const grp=[...main.map(s=>({n:ja(s,INC),f:m=>(D.income[m].by_source[s]||{}).jpy||0})),...(rest.length?[{n:'手当・還付ほか',f:m=>rest.reduce((a,s)=>a+((D.income[m].by_source[s]||{}).jpy||0),0)}]:[])];
   chart('c-inc',{...base(),xAxis:xcat(ims),yAxis:yval(),series:grp.map((g,i)=>({name:g.n,type:'bar',stack:'inc',data:ims.map(g.f),itemStyle:{color:F[Math.min(i,4)],borderColor:css('--bg'),borderWidth:1,decal:i===4?{symbol:'rect',symbolSize:1,dashArrayX:[1,0],dashArrayY:[2,4],rotation:Math.PI/4,color:css('--ink2')}:null},barCategoryGap:'40%'}))});
   el('lg-inc').innerHTML=grp.map((g,i)=>`<span><i style="--sw:${F[Math.min(i,4)]};outline:1px solid var(--line2);${i===4?`background:repeating-linear-gradient(45deg,${F[4]} 0 2px,var(--ink2) 2px 3px)`:''}"></i>${g.n}</span>`).join('');}
-  el('s-fx').hidden=ms.length<2;
-  if(ms.length>=2)chart('c-fx',{...base(),tooltip:{...base().tooltip,valueFormatter:v=>v==null?'-':v.toFixed(2)},grid:{left:44,right:24,top:16,bottom:28},xAxis:xcat(ms),yAxis:{...yval(v=>v),scale:true},
-    series:[{name:'換算レート',type:'line',data:ms.map(m=>({value:+D.fx[m].toFixed(3),symbol:D.fx_src[m]==='moin'?'circle':'emptyCircle'})),itemStyle:{color:css('--ink')},lineStyle:{width:2},symbolSize:8},
-            {name:'市場平均',type:'line',data:ms.map(m=>+D.fx_market[m].toFixed(3)),itemStyle:{color:css('--ink3')},lineStyle:{width:1,type:'dashed'},symbol:'none'}]});
+  const SAL=[['CMKR','給与（CMKR）'],['Ople','事業所得（Ople）'],['チームJカーブ','副業（チームJカーブ）']].filter(([k])=>ms.some(m=>(D.income[m].by_source[k]||{}).krw));
+  const lines=SAL.map(([k,n],i)=>{const v=ms.map(m=>{const x=D.income[m].by_source[k];return x&&x.krw?x.krw:null});
+    const vals=v.filter(x=>x!=null).sort((a,b)=>a-b),med=vals[Math.floor(vals.length/2)]||0;const marks=[];let base=null;
+    v.forEach((x,i)=>{if(x==null)return;if(x>med*1.15){marks.push({coord:[i,x],value:'＊賞与込み'});return}
+      if(base!=null&&x>base*1.03&&v.slice(i+1).filter(y=>y!=null&&Math.abs(y-x)/x<0.03).length>=1)marks.push({coord:[i,x],value:'▲昇給'});base=x});
+    return {name:n,type:'line',data:v,connectNulls:false,symbol:'circle',symbolSize:7,itemStyle:{color:[css('--ink'),css('--f2'),css('--f3')][i]},lineStyle:{width:2,type:i===2?'dashed':'solid'},
+      markPoint:{symbol:'rect',symbolSize:1,label:{show:true,position:'top',color:css('--ink'),fontFamily:font,fontSize:11,formatter:p=>p.value},data:marks}}});
+  chart('c-salary',{...base(),tooltip:{...base().tooltip,valueFormatter:v=>v==null?'-':krw(v)},grid:{left:56,right:24,top:30,bottom:28},xAxis:xcat(ms),yAxis:yval(v=>Math.round(v/10000)+'万'),series:lines});
+  el('lg-salary').innerHTML=SAL.map(([k,n],i)=>`<span><i style="--sw:${[css('--ink'),css('--f2'),css('--f3')][i]}"></i>${n}</span>`).join('');
 }
 
 function renderAssets(){
@@ -515,8 +545,8 @@ function renderAssets(){
   el('s-asset-trend').hidden=tms.length<2;
   if(tms.length>=2){chart('c-assets',{...base(),xAxis:xcat(tms),yAxis:yval(),tooltip:{...base().tooltip,trigger:'axis'},
     series:acc.map((k,i)=>({name:k,type:'bar',stack:'a',barCategoryGap:'40%',data:tms.map(m=>T[m].by_account[k]||0),itemStyle:{color:[F[0],F[2],F[4]][i],borderColor:css('--bg'),borderWidth:1,decal:k==='仮想通貨'?{symbol:'rect',symbolSize:1,dashArrayX:[1,0],dashArrayY:[2,4],rotation:Math.PI/4,color:css('--ink2')}:null}}))
-      .concat([{name:'合計',type:'line',data:tms.map(m=>T[m].total_jpy),symbol:'circle',symbolSize:6,itemStyle:{color:css('--ink')},lineStyle:{width:0},label:{show:true,position:'top',color:css('--ink'),fontFamily:font,fontSize:11,formatter:p=>man(p.value)}}])});
-    el('lg-assets').innerHTML=acc.map((k,i)=>`<span><i style="--sw:${[F[0],F[2],F[4]][i]};outline:1px solid var(--line2);${k==='仮想通貨'?`background:repeating-linear-gradient(45deg,${F[4]} 0 2px,var(--ink2) 2px 3px)`:''}"></i>${k}</span>`).join('');}
+      .concat([{name:'投資元本（推定）',type:'line',data:tms.map(m=>(D.asset_principal||{})[m]??null),symbol:'none',itemStyle:{color:css('--pos')},lineStyle:{width:2,type:'dashed',color:css('--pos')},z:5},{name:'合計',type:'line',data:tms.map(m=>T[m].total_jpy),symbol:'circle',symbolSize:6,itemStyle:{color:css('--ink')},lineStyle:{width:0},label:{show:true,position:'top',color:css('--ink'),fontFamily:font,fontSize:11,formatter:p=>man(p.value)}}])});
+    el('lg-assets').innerHTML=`<span><i class="dash" style="border-top-color:var(--pos)"></i>投資元本（推定）</span>`+acc.map((k,i)=>`<span><i style="--sw:${[F[0],F[2],F[4]][i]};outline:1px solid var(--line2);${k==='仮想通貨'?`background:repeating-linear-gradient(45deg,${F[4]} 0 2px,var(--ink2) 2px 3px)`:''}"></i>${k}</span>`).join('');}
   if(!a){el('b-assets').innerHTML='<div class="empty">銘柄別の記録なし</div>';el('t-assets').innerHTML='';return}
   el('n-assets').textContent=mlabel(am)+'時点の評価額';
   bars('b-assets',inv.sort((x,y)=>y.value_jpy-x.value_jpy).map(x=>[x.item,x.value_jpy]),invV,{label:k=>k,field:'__none'});

@@ -555,7 +555,7 @@ function renderAssets(){
   el('n-assets').textContent=mlabel(am)+'時点の評価額';
   bars('b-assets',inv.sort((x,y)=>y.value_jpy-x.value_jpy).map(x=>[x.item,x.value_jpy]),invV,{label:k=>k,field:'__none'});
   el('b-assets').querySelectorAll('.bar').forEach(b=>{b.style.cursor='default';b.onclick=null});
-  const G=[['インデックス投信',x=>x.class==='NISA'&&!/SpaceX/.test(x.item)],['個別株（SpaceX）',x=>/SpaceX/.test(x.item)],['暗号資産',x=>x.class==='크립토']];
+  const G=[['インデックス投信',x=>x.class==='NISA'&&!/個別株|SpaceX|ISRG/.test(x.item)],['個別株',x=>/個別株|SpaceX|ISRG/.test(x.item)],['暗号資産',x=>x.class==='크립토']];
   const dItems=G.map(([n,f])=>({item:n,class:n.startsWith('暗号')?'크립토':'NISA',value_jpy:inv.filter(f).reduce((a,x)=>a+x.value_jpy,0)})).filter(x=>x.value_jpy>0);const dTot=invV||1;
   const dcol=(x)=>x.class==='크립토'?F[4]:(x.item.startsWith('個別')?F[2]:F[0]);
   chart('c-donut',{textStyle:{color:css('--ink2'),fontFamily:font},tooltip:{trigger:'item',backgroundColor:css('--bg'),borderColor:css('--line2'),textStyle:{color:css('--ink'),fontFamily:font},formatter:p=>`${p.name}<br>${yen(p.value)}　${p.percent}%`},

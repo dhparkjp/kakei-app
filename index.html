@@ -189,7 +189,8 @@ html,body{overflow-x:hidden}
 #lock button:disabled{opacity:.5}
 #lock label{display:flex;gap:8px;align-items:center;justify-content:center;color:#a3a3a0;font-size:12px}
 #lock .err{color:#ff7a70;font-size:12px;min-height:16px;text-align:center}
-#lockbtn{background:none;border:0;color:var(--ink3);font:inherit;font-size:11px;cursor:pointer;padding:0;margin-left:10px;text-decoration:underline}
+#lockbtn,#lockbtn2{background:none;border:0;color:var(--ink3);font:inherit;font-size:11px;cursor:pointer;padding:0;margin-left:10px;text-decoration:underline}
+@media (max-width:640px){header h1 small{display:inline!important;font-size:10px;margin-left:8px}}
 </style>
 </head>
 <body>
@@ -199,7 +200,7 @@ html,body{overflow-x:hidden}
 
 
 <header><div class="wrap">
-  <h1>朴家の家計簿 <small id="gen"></small><button id="lockbtn" type="button" onclick="lockNow()">ロック</button></h1>
+  <h1>朴家の家計簿 <small id="gen"></small><button id="lockbtn" type="button" onclick="refreshNow()">最新に更新</button><button id="lockbtn2" type="button" onclick="lockNow()">ロック</button></h1>
   <label><select id="month" aria-label="開始月"></select></label><span style="color:var(--ink3);margin-bottom:12px">〜</span><label><select id="month2" aria-label="終了月"></select></label>
   <nav class="tabs" id="tabs">
     <button data-p="summary" class="on">サマリー</button>
@@ -594,7 +595,8 @@ async function boot(){
     b.disabled=false;b.textContent='ひらく';};
 }
 function lockNow(){try{localStorage.removeItem(K_STORE)}catch(_){}location.reload();}
-if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});}
+async function refreshNow(){try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.unregister()));}catch(e){}location.replace(location.pathname+'?r='+Date.now());}
 boot();
 
 </script>

@@ -178,6 +178,10 @@ html,body{overflow-x:hidden}
 #budget .row{display:flex;justify-content:space-between;font-size:12px;color:var(--ink2);padding:3px 0}
 #outlook table td.n b{font-family:Manrope,sans-serif;font-weight:800;font-size:15px}
 /* ---- stocks ---- */
+.moat{display:inline-block;font-size:11px;line-height:1;padding:3px 7px;border:1px solid var(--ink);white-space:nowrap;font-weight:700;vertical-align:middle}
+.moat.m1{background:var(--ink);color:var(--bg)}.moat.m2{background:transparent;color:var(--ink)}.moat.m3{border-color:var(--ink3);color:var(--ink3);background:transparent;font-weight:400}
+.pick .moat{margin-left:6px}
+.sd div span.moat{display:inline-block;letter-spacing:0;margin-right:6px}
 .sp{color:var(--pos)}.sn{color:var(--neg)}
 .pickgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:14px}
 .pick{border:1px solid var(--line2);padding:14px 16px;min-width:0}
@@ -200,7 +204,7 @@ html,body{overflow-x:hidden}
 .sd div span{display:block;font-size:11px;letter-spacing:.08em;color:var(--ink3)}
 .sd .full{grid-column:1/-1}
 @media (max-width:600px){
-  #t-stocks th:nth-child(2),#t-stocks td:nth-child(2),#t-stocks th:nth-child(5),#t-stocks td:nth-child(5),#t-stocks th:nth-child(7),#t-stocks td:nth-child(7),#t-stocks th:nth-child(9),#t-stocks td:nth-child(9),#t-stocks th:nth-child(10),#t-stocks td:nth-child(10),#t-stocks th:nth-child(11),#t-stocks td:nth-child(11){display:none}
+  #t-stocks th:nth-child(2),#t-stocks td:nth-child(2),#t-stocks th:nth-child(3),#t-stocks td:nth-child(3),#t-stocks th:nth-child(6),#t-stocks td:nth-child(6),#t-stocks th:nth-child(8),#t-stocks td:nth-child(8),#t-stocks th:nth-child(10),#t-stocks td:nth-child(10),#t-stocks th:nth-child(11),#t-stocks td:nth-child(11),#t-stocks th:nth-child(12),#t-stocks td:nth-child(12){display:none}
   #t-stocks tr.dt td{display:table-cell}
   #t-stocks td.rs{min-width:0}
 }
@@ -297,6 +301,7 @@ html,body{overflow-x:hidden}
       <div class="filters">
         <label>判定<select id="st-status"><option value="">すべて</option><option>通過</option><option>保留</option><option>脱落</option></select></label>
         <label>市場<select id="st-mkt"><option value="">すべて</option><option>US</option><option>JP</option><option>KR</option><option>HK</option></select></label>
+        <label>独占度<select id="st-moat"><option value="">すべて</option><option>独占</option><option>寡占</option><option>独走</option><option value="dk">独占・独走（寡占除く）</option></select></label>
         <label>銘柄名・ティッカー<input id="st-q" placeholder="検索" style="min-width:180px"></label>
         <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="st-noai" style="width:auto">AI関連を除く</label>
       </div>
@@ -430,7 +435,7 @@ function init(){
   [...cats].sort().forEach(c=>el('tx-cat').insertAdjacentHTML('beforeend',`<option value="${c}">${ja(c,CAT)}</option>`));
   [...srcs].sort().forEach(c=>el('tx-src').insertAdjacentHTML('beforeend',`<option value="${c}">${ja(c,SRC)}</option>`));
   ['tx-q','tx-cat','tx-src','tx-all'].forEach(i=>el(i).oninput=renderTx);
-  ['st-q','st-status','st-mkt','st-noai'].forEach(i=>el(i).oninput=renderStocks);
+  ['st-q','st-status','st-mkt','st-moat','st-noai'].forEach(i=>el(i).oninput=renderStocks);
   window.addEventListener('resize',()=>Object.values(charts).forEach(c=>c.resize()));
   if(location.hash){const b=el('tabs').querySelector(`[data-p="${location.hash.slice(1)}"]`);if(b)b.click()}
   render();
@@ -620,7 +625,7 @@ function renderTx(){
 }
 
 const STS={'通過':1,'保留':2,'脱落':3};
-const STCOLS=[['name','銘柄',0],['market','市場',0],['price','株価',1],['off_high_pct','高値比',1],['m1_pct','1か月',1],['fwd_pe','来期PER',1],['eps_growth_pct','EPS成長',1],['q_grade','質',0],['g_grade','成長',0],['p_grade','価格',0],['low_grade','底値',0],['status','判定',0],['reason','理由',0]];
+const STCOLS=[['name','銘柄',0],['market','市場',0],['moat','独占度',0],['price','株価',1],['off_high_pct','高値比',1],['m1_pct','1か月',1],['fwd_pe','来期PER',1],['eps_growth_pct','EPS成長',1],['q_grade','質',0],['g_grade','成長',0],['p_grade','価格',0],['low_grade','底値',0],['status','判定',0],['reason','理由',0]];
 let stSort={k:null,desc:false},stOpen=null;
 const stEsc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const stNum=(v,d)=>v==null?'-':v.toLocaleString(undefined,{minimumFractionDigits:d||0,maximumFractionDigits:d||0});
@@ -636,9 +641,10 @@ function stCmp(a,b){
   const c=k==='status'?(STS[x]||9)-(STS[y]||9):typeof x==='number'?x-y:String(x).localeCompare(String(y),'ja');
   return stSort.desc?-c:c;
 }
+const stMoat=v=>v?`<span class="moat ${v==='独占'?'m1':v==='独走'?'m2':'m3'}">${stEsc(v)}</span>`:'';
 function stDetail(r){
   const f=(l,v)=>`<div><span>${l}</span>${v==null||v===''?'-':stEsc(v)}</div>`;
-  return `<tr class="dt"><td colspan="13"><div class="sd">${f('セクター',r.sector)}${f('AI関連',r.ai?'はい':'いいえ')}<div><span>5年リターン</span>${stPct(r.ret5y_pct)}</div><div><span>最大下落</span>${stPct(r.maxdd_pct)}</div><div><span>売上成長</span>${stPct(r.rev_growth_pct)}</div>${f('PEG',r.peg==null?null:r.peg.toFixed(1))}${f('EPS予想の方向',r.eps_revision)}${f('創業者経営',r.founder)}${f('既存ポートフォリオとの重複',r.overlap)}${f('購入先',r.broker)}${f('次のイベント',r.next_event)}<div class="full"><span>メモ</span>${stEsc(r.note)||'-'}</div></div></td></tr>`;
+  return `<tr class="dt"><td colspan="14"><div class="sd">${f('セクター',r.sector)}${f('AI関連',r.ai?'はい':'いいえ')}<div><span>5年リターン</span>${stPct(r.ret5y_pct)}</div><div><span>最大下落</span>${stPct(r.maxdd_pct)}</div><div><span>売上成長</span>${stPct(r.rev_growth_pct)}</div>${f('PEG',r.peg==null?null:r.peg.toFixed(1))}${f('EPS予想の方向',r.eps_revision)}${f('創業者経営',r.founder)}${f('既存ポートフォリオとの重複',r.overlap)}${f('購入先',r.broker)}${f('次のイベント',r.next_event)}<div class="full"><span>独占度</span>${stMoat(r.moat)}${r.moat_note?(r.moat?' ':'')+stEsc(r.moat_note):(r.moat?'':'-')}</div><div class="full"><span>メモ</span>${stEsc(r.note)||'-'}</div></div></td></tr>`;
 }
 function renderStocks(){
   const S=D.stocks||{rows:[]},all=S.rows||[];
@@ -646,16 +652,16 @@ function renderStocks(){
   el('figs-stocks').innerHTML=fig('通過',cnt('通過'),'銘柄')+fig('保留',cnt('保留'),'銘柄')+fig('脱落',cnt('脱落'),'銘柄')+fig('調査日',S.asof||'-','株価の基準日');
   const picks=all.filter(r=>r.pick).sort((a,b)=>a.pick-b.pick);
   el('s-picks').hidden=!picks.length;
-  el('picks').innerHTML=picks.map(r=>`<div class="pick"><div class="top"><span class="nm">${stEsc(r.name)}</span><span class="star">★ ${r.pick}</span></div><div class="tk">${stEsc(r.ticker)} · ${stEsc(r.market)}</div><div class="px num">${stPx(r)}</div><div class="gr">質 / 成長 / 価格 / 底値　${stEsc(stGr(r))}</div><div class="rs">${stEsc(r.reason)}</div></div>`).join('');
-  const q=el('st-q').value.toLowerCase(),s=el('st-status').value,m=el('st-mkt').value,noai=el('st-noai').checked;
-  const rows=all.filter(r=>(!s||r.status===s)&&(!m||r.market===m)&&(!noai||!r.ai)&&(!q||(r.name+' '+r.ticker).toLowerCase().includes(q))).sort(stCmp);
+  el('picks').innerHTML=picks.map(r=>`<div class="pick"><div class="top"><span class="nm">${stEsc(r.name)}${stMoat(r.moat)}</span><span class="star">★ ${r.pick}</span></div><div class="tk">${stEsc(r.ticker)} · ${stEsc(r.market)}</div><div class="px num">${stPx(r)}</div><div class="gr">質 / 成長 / 価格 / 底値　${stEsc(stGr(r))}</div><div class="rs">${stEsc(r.reason)}</div></div>`).join('');
+  const q=el('st-q').value.toLowerCase(),s=el('st-status').value,m=el('st-mkt').value,mo=el('st-moat').value,noai=el('st-noai').checked;
+  const rows=all.filter(r=>(!s||r.status===s)&&(!m||r.market===m)&&(!mo||(mo==='dk'?(r.moat==='独占'||r.moat==='独走'):r.moat===mo))&&(!noai||!r.ai)&&(!q||(r.name+' '+r.ticker).toLowerCase().includes(q))).sort(stCmp);
   if(!all.length){el('t-stocks').innerHTML='<tr><td class="empty">データなし</td></tr>';return}
   const head='<tr>'+STCOLS.map(([k,l,n])=>`<th class="${n?'n':''} ${stSort.k===k?'on'+(stSort.desc?' desc':''):''}" data-k="${k}">${l}</th>`).join('')+'</tr>';
   const body=rows.map(r=>{
     const open=stOpen===r.ticker,sc=STS[r.status]||2;
-    return `<tr class="row s${sc}" data-t="${stEsc(r.ticker)}"><td class="name">${stEsc(r.name)}${r.pick?' ★':''}<small>${stEsc(r.ticker)}</small></td><td>${stEsc(r.market)}</td><td class="n">${stNum(r.price,r.price!=null&&r.price<1000?2:0)}</td><td class="n">${stPct(r.off_high_pct)}</td><td class="n">${stPct(r.m1_pct)}</td><td class="n">${stNum(r.fwd_pe,1)}</td><td class="n">${stPct(r.eps_growth_pct)}</td><td>${stEsc(r.q_grade)}</td><td>${stEsc(r.g_grade)}</td><td>${stEsc(r.p_grade)}</td><td>${stEsc(r.low_grade)}</td><td class="${sc===1?'st1':sc===3?'st3':''}">${stEsc(r.status)}</td><td class="rs">${stEsc(r.reason)}</td></tr>`+(open?stDetail(r):'');
+    return `<tr class="row s${sc}" data-t="${stEsc(r.ticker)}"><td class="name">${stEsc(r.name)}${r.pick?' ★':''}<small>${stEsc(r.ticker)}</small></td><td>${stEsc(r.market)}</td><td>${stMoat(r.moat)}</td><td class="n">${stNum(r.price,r.price!=null&&r.price<1000?2:0)}</td><td class="n">${stPct(r.off_high_pct)}</td><td class="n">${stPct(r.m1_pct)}</td><td class="n">${stNum(r.fwd_pe,1)}</td><td class="n">${stPct(r.eps_growth_pct)}</td><td>${stEsc(r.q_grade)}</td><td>${stEsc(r.g_grade)}</td><td>${stEsc(r.p_grade)}</td><td>${stEsc(r.low_grade)}</td><td class="${sc===1?'st1':sc===3?'st3':''}">${stEsc(r.status)}</td><td class="rs">${stEsc(r.reason)}</td></tr>`+(open?stDetail(r):'');
   }).join('');
-  el('t-stocks').innerHTML=head+(body||'<tr><td colspan="13" class="empty">該当なし</td></tr>');
+  el('t-stocks').innerHTML=head+(body||'<tr><td colspan="14" class="empty">該当なし</td></tr>');
   el('t-stocks').querySelectorAll('th').forEach(th=>th.onclick=()=>{const k=th.dataset.k;stSort=stSort.k===k?{k,desc:!stSort.desc}:{k,desc:false};renderStocks()});
   el('t-stocks').querySelectorAll('tr.row').forEach(tr=>tr.onclick=()=>{stOpen=stOpen===tr.dataset.t?null:tr.dataset.t;renderStocks()});
 }

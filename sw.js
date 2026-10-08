@@ -1,4 +1,4 @@
-const C='kakei-6f00aa98';
+const C='kakei-6759dfb2';
 const CORE=['./','index.html','manifest.webmanifest','icon-192-vbe223300.png','icon-512-vbe223300.png','apple-touch-icon-vbe223300.png','https://cdnjs.cloudflare.com/ajax/libs/echarts/5.6.0/echarts.min.js'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});

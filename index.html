@@ -247,7 +247,7 @@ html,body{overflow-x:hidden}
 
   <section id="p-assets" class="panel">
     <div class="figs" id="figs-assets"></div>
-    <section class="block" id="s-asset-trend"><h2 data-ic="invest">投資資産の推移</h2><p class="note">月末の評価額と、これまでに入れた元本（破線）。差が評価益。元本は9月の保有明細から毎月の積立額を逆算した推定値</p><div id="c-assets" class="chart tall"></div><div class="legend" id="lg-assets"></div></section>
+    <section class="block" id="s-asset-trend"><h2 data-ic="invest">投資資産の推移</h2><p class="note">月末の評価額と、これまでに入れた元本（破線）。差が評価益。元本は保有明細（評価損益）から毎月の積立額を逆算した推定値</p><div id="c-assets" class="chart tall"></div><div class="legend" id="lg-assets"></div></section>
     <div class="two"><section class="block"><h2 data-ic="asset">銘柄別</h2><p class="note" id="n-assets"></p><div class="bars" id="b-assets"></div></section><section class="block"><h2 data-ic="rate">構成比</h2><p class="note">インデックス・個別株・暗号資産の割合。タップで金額</p><div class="dd" style="margin-top:14px;align-items:center"><div id="c-donut" style="width:260px;height:260px;flex:none"></div><div class="legend" id="lg-donut" style="flex-direction:column;gap:8px;flex:1;min-width:0"></div></div></section></div>
     <section class="block"><h2 data-ic="asset">保有内訳</h2><div class="tablewrap"><table id="t-assets"></table></div></section>
   </section>
@@ -327,6 +327,7 @@ const fd=d=>d.endsWith('--')?'毎月':d.slice(5);
 let D=null,M=null,R1=null,R2=null,charts={};
 const inM=m=>M==='__range'?(m>=R1&&m<=R2):m===M;
 const endM=()=>M==='__range'?R2:M;
+const assetM=()=>{const e=endM();const done=D.months.filter(m=>complete(m));const lastDone=done[done.length-1];return (lastDone&&e>=lastDone)?D.months[D.months.length-1]:e;};
 const el=id=>document.getElementById(id);
 const font='Manrope, "Noto Sans JP", sans-serif';
 function base(){return {textStyle:{color:css('--ink2'),fontFamily:font},animationDuration:300,tooltip:{trigger:'axis',backgroundColor:css('--bg'),borderColor:css('--line2'),textStyle:{color:css('--ink'),fontFamily:font},valueFormatter:v=>v==null?'-':yen(v)},grid:{left:56,right:24,top:24,bottom:28}}}
@@ -393,8 +394,8 @@ function init(){
 }
 function renderHero(){
   const inc=D.income[M].total_jpy,exp=D.expense[M].total_jpy,inv=D.invest[M].total_jpy,net=inc-exp-inv,p=prev(M);
-  const T=D.asset_trend||{};const ams=D.months.filter(m=>T[m]&&m<=endM()),am=ams.length?ams[ams.length-1]:null;const av=am?T[am].total_jpy:0;
-  el('hero').innerHTML=hero('手元に残るお金',yen(net),complete(M)?'収入 − 支出 − 投資積立':'給与の入金記録待ち','net')+hero('収入',yen(inc),p&&complete(p)?delta(inc,D.income[p].total_jpy):'給与・事業所得・児童手当','income')+hero('支出',yen(exp),p&&complete(p)?delta(exp,D.expense[p].total_jpy):'日本＋韓国、円換算','expense')+hero('投資積立',yen(inv),'NISA・暗号資産','invest')+(am?hero('投資資産',yen(av),mlabel(am)+'末','asset'):'')+HERO_ART;
+  const T=D.asset_trend||{};const ams=D.months.filter(m=>T[m]&&m<=assetM()),am=ams.length?ams[ams.length-1]:null;const av=am?T[am].total_jpy:0;
+  el('hero').innerHTML=hero('手元に残るお金',yen(net),complete(M)?'収入 − 支出 − 投資積立':'給与の入金記録待ち','net')+hero('収入',yen(inc),p&&complete(p)?delta(inc,D.income[p].total_jpy):'給与・事業所得・児童手当','income')+hero('支出',yen(exp),p&&complete(p)?delta(exp,D.expense[p].total_jpy):'日本＋韓国、円換算','expense')+hero('投資積立',yen(inv),'NISA・暗号資産','invest')+(am?hero('投資資産',yen(av),am?(T[am].from_detail&&am===D.months[D.months.length-1]?mlabel(am)+'・最新':mlabel(am)+'末'):'','asset'):'')+HERO_ART;
 }
 function render(){
   try{renderOneline()}catch(e){}
@@ -477,7 +478,7 @@ function renderOneline(){
   if(!complete(M)){el('oneline').innerHTML=`${lbl}は給与の入金待ちで集計中。いまのところ支出は <b>${yen(exp)}</b>。`;return}
   const pn=v=>v>=0?`<b>${yen(v)}</b> の黒字`:`<b>${yen(-v)}</b> の赤字`;
   const tr=D.transactions.filter(t=>t.trip&&inM(t.month));const tSum=tr.reduce((a,t)=>a+t.jpy,0);
-  if(tSum>=30000){const names=[...new Set(tr.map(t=>t.trip))].join('・');el('oneline').innerHTML=`${lbl}は${pn(net)}。いちばん大きかったのは旅行（${names}）の <b>${yen(tSum)}</b>。`;return}
+  if(tSum>=30000){const names=[...new Set(tr.map(t=>t.trip))].join('・');el('oneline').innerHTML=`${lbl}は${pn(net)}。いちばん大きかったのは旅行「${names}」の <b>${yen(tSum)}</b>。`;return}
   const p=prev(M);if(p){const a=D.expense[M].by_category,b=D.expense[p].by_category;const d=Object.keys({...a,...b}).map(k=>[k,(a[k]||0)-(b[k]||0)]).filter(([k])=>!['경비정산','가족정산'].includes(k)).sort((x,y)=>Math.abs(y[1])-Math.abs(x[1]))[0];
     if(d&&Math.abs(d[1])>=10000){el('oneline').innerHTML=`${lbl}は${pn(net)}。先月との差がいちばん大きいのは${ja(d[0],CAT)}（${d[1]>0?'+':'−'}${yen(Math.abs(d[1]))}）。`;return}}
   el('oneline').innerHTML=`${lbl}は${pn(net)}。`;
@@ -538,8 +539,8 @@ function renderIncome(){
 function renderAssets(){
   const F=FILLS(),T=D.asset_trend||{},tms=D.months.filter(m=>T[m]);
   const pct=x=>`<span style="margin-left:8px;font-size:.85em;opacity:.85">${x}%</span>`;
-  const tm=tms.filter(m=>m<=endM()).pop()||tms[0];
-  const dms=D.months.filter(m=>D.assets[m]);const am=dms.filter(m=>m<=endM()).pop()||dms[dms.length-1];const a=am?D.assets[am]:null;
+  const tm=tms.filter(m=>m<=assetM()).pop()||tms[0];
+  const dms=D.months.filter(m=>D.assets[m]);const am=dms.filter(m=>m<=assetM()).pop()||dms[dms.length-1];const a=am?D.assets[am]:null;
   if(!tm&&!a){el('figs-assets').innerHTML=fig('投資資産','記録なし','');return}
   const t=T[tm],pt=T[tms[tms.indexOf(tm)-1]];
   const inv=a?a.items.filter(x=>x.class==='NISA'||x.class==='크립토'):[],invV=inv.reduce((s,x)=>s+x.value_jpy,0),invP=inv.reduce((s,x)=>s+(x.principal_jpy||0),0);
@@ -553,7 +554,7 @@ function renderAssets(){
       .concat([{name:'投資元本（推定）',type:'line',data:tms.map(m=>(D.asset_principal||{})[m]??null),symbol:'none',itemStyle:{color:css('--pos')},lineStyle:{width:2,type:'dashed',color:css('--pos')},z:5},{name:'合計',type:'line',data:tms.map(m=>T[m].total_jpy),symbol:'circle',symbolSize:6,itemStyle:{color:css('--ink')},lineStyle:{width:0},label:{show:true,position:'top',color:css('--ink'),fontFamily:font,fontSize:11,formatter:p=>man(p.value)}}])});
     el('lg-assets').innerHTML=`<span><i class="dash" style="border-top-color:var(--pos)"></i>投資元本（推定）</span>`+acc.map((k,i)=>`<span><i style="--sw:${[F[0],F[2],F[4]][i]};outline:1px solid var(--line2);${k==='仮想通貨'?`background:repeating-linear-gradient(45deg,${F[4]} 0 2px,var(--ink2) 2px 3px)`:''}"></i>${k}</span>`).join('');}
   if(!a){el('b-assets').innerHTML='<div class="empty">銘柄別の記録なし</div>';el('t-assets').innerHTML='';return}
-  el('n-assets').textContent=mlabel(am)+'時点の評価額';
+  el('n-assets').textContent=mlabel(am)+(am===D.months[D.months.length-1]?'・最新の評価額':'時点の評価額');
   bars('b-assets',inv.sort((x,y)=>y.value_jpy-x.value_jpy).map(x=>[x.item,x.value_jpy]),invV,{label:k=>k,field:'__none'});
   el('b-assets').querySelectorAll('.bar').forEach(b=>{b.style.cursor='default';b.onclick=null});
   const G=[['インデックス投信',x=>x.class==='NISA'&&!/個別株|SpaceX|ISRG/.test(x.item)],['個別株',x=>/個別株|SpaceX|ISRG/.test(x.item)],['暗号資産',x=>x.class==='크립토']];

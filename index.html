@@ -208,6 +208,9 @@ html,body{overflow-x:hidden}
   #t-stocks tr.dt td{display:table-cell}
   #t-stocks td.rs{min-width:0}
 }
+.subh{font-size:13px;font-weight:700;letter-spacing:.06em;margin:28px 0 4px}
+#t-perf-m thead th{position:sticky;top:0;background:var(--bg)}
+@media (max-width:600px){#t-perf-m th:nth-child(3),#t-perf-m td:nth-child(3){display:none}#t-perf-y th,#t-perf-y td,#t-perf-m th,#t-perf-m td{padding-right:6px}}
 
 #lock{position:fixed;inset:0;z-index:50;background:#0f0f0f;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;padding-top:calc(24px + env(safe-area-inset-top,0px))}
 #lock[hidden]{display:none!important}
@@ -279,6 +282,9 @@ html,body{overflow-x:hidden}
 
   <section id="p-assets" class="panel">
     <div class="figs" id="figs-assets"></div>
+    <section class="block" id="s-perf" hidden><h2 data-ic="invest">投資の成績（口座開設から）</h2><p class="note" id="n-perf"></p><div class="figs" id="figs-perf" style="margin-top:16px"></div><div id="c-perf" class="chart tall"></div><div class="legend" id="lg-perf"></div>
+      <h3 class="subh">年ごとの成績</h3><div class="tablewrap" style="max-height:none"><table id="t-perf-y"></table></div>
+      <h3 class="subh">月ごとの成績</h3><div class="tablewrap" style="max-height:420px"><table id="t-perf-m"></table></div></section>
     <section class="block" id="s-asset-trend"><h2 data-ic="invest">投資資産の推移</h2><p class="note">月末の評価額と、これまでに入れた元本（破線）。差が評価益。元本は保有明細（評価損益）から毎月の積立額を逆算した推定値</p><div id="c-assets" class="chart tall"></div><div class="legend" id="lg-assets"></div></section>
     <div class="two"><section class="block"><h2 data-ic="asset">銘柄別</h2><p class="note" id="n-assets"></p><div class="bars" id="b-assets"></div></section><section class="block"><h2 data-ic="rate">構成比</h2><p class="note">インデックス・個別株・暗号資産の割合。タップで金額</p><div class="dd" style="margin-top:14px;align-items:center"><div id="c-donut" style="width:260px;height:260px;flex:none"></div><div class="legend" id="lg-donut" style="flex-direction:column;gap:8px;flex:1;min-width:0"></div></div></section></div>
     <section class="block"><h2 data-ic="asset">保有内訳</h2><div class="tablewrap"><table id="t-assets"></table></div></section>
@@ -584,7 +590,43 @@ function renderIncome(){
   el('lg-salary').innerHTML=SAL.map(([ks,n],i)=>`<span><i style="--sw:${[css('--ink'),css('--f2'),css('--f3')][i]}"></i>${n}</span>`).join('');
 }
 
+function renderPerf(){
+  const P=D.perf,sec=el('s-perf');sec.hidden=!P;if(!P)return;
+  const F=FILLS(),t=P.total,sg=v=>v>0?'+':v<0?'−':'';
+  const jd=d=>{const[y,m,dd]=d.split('-');return y+'年'+parseInt(m)+'月'+parseInt(dd)+'日'};
+  const md=d=>parseInt(d.slice(5,7))+'/'+parseInt(d.slice(8));
+  const pc=v=>v==null?'':sg(v)+Math.abs(v).toFixed(1)+'%';
+  const cl=v=>v>0?'up':v<0?'down':'';
+  const sp=(v,txt)=>v==null?'':`<span class="${cl(v)}">${txt}</span>`;
+  el('n-perf').innerHTML=`${jd(P.start)}から${jd(P.asof)}まで。対象: ${P.accounts.join('・')}${(P.missing||[]).length?' ／ '+P.missing.join('、')+'（まだ含まれていません）':''}`;
+  el('figs-perf').innerHTML=fig('入れたお金',yen(t.principal),`買った額 ${yen(t.invested_gross)} − 売った額 ${yen(t.withdrawn)}`,'','asset')
+    +fig('いまの評価額',yen(t.value),md(P.asof)+' 時点','','invest')
+    +fig('増えたお金',sg(t.gain)+yen(Math.abs(t.gain)),`累計 ${pc(t.twr_total)}`,t.gain<0?'neg':'','net').replace('class="v "','class="v" style="color:var(--pos)"')
+    +fig('年あたりの成績',pc(t.irr),'入れた時期を考慮した年平均','','rate');
+  const ms=P.months,order=['S&P500','FANG+','SpaceX','BTC','ETH','XRP'];
+  const all=[...new Set(ms.flatMap(m=>Object.keys(m.by_asset||{})))];
+  const assets=[...order.filter(k=>all.includes(k)),...all.filter(k=>!order.includes(k))];
+  const crypto=['BTC','ETH','XRP'];
+  const sty=k=>{const i=assets.indexOf(k);
+    if(crypto.includes(k)){const j=crypto.indexOf(k);return {c:[F[3],F[4],F[4]][j],d:{symbol:'rect',symbolSize:1,dashArrayX:[1,0],dashArrayY:[2,4+j*2],rotation:Math.PI/4*(j%2?-1:1),color:css('--ink2')}}}
+    const base={'S&P500':F[0],'FANG+':F[1],'SpaceX':F[2]};return {c:base[k]||F[2],d:base[k]?null:{symbol:'rect',symbolSize:1,dashArrayX:[1,0],dashArrayY:[2,4],rotation:0,color:css('--bg')}}};
+  const lab=(m,i)=>{const mm=parseInt(m.slice(5));return (i===0||mm===1)?m.slice(2,4)+'/'+mm:mm+'月'};
+  const xs=ms.map(m=>m.month);
+  chart('c-perf',{...base(),xAxis:{...xcat(xs),data:xs.map(lab)},yAxis:yval(),
+    tooltip:{...base().tooltip,trigger:'axis',formatter:ps=>{const i=ps[0].dataIndex,m=ms[i];
+      const rows=ps.filter(p=>p.seriesType==='bar'&&p.value).reverse().map(p=>`<div style="display:flex;justify-content:space-between;gap:16px"><span>${p.marker}${p.seriesName}</span><b>${yen(p.value)}</b></div>`).join('');
+      return `<b>${m.month.slice(0,4)}年${parseInt(m.month.slice(5))}月</b>${rows}<div style="display:flex;justify-content:space-between;gap:16px;border-top:1px solid ${css('--line2')};margin-top:4px;padding-top:4px"><span>合計</span><b>${yen(m.value)}</b></div><div style="display:flex;justify-content:space-between;gap:16px"><span>入れたお金</span><b>${yen(m.principal)}</b></div><div style="display:flex;justify-content:space-between;gap:16px"><span>損益</span><b style="color:${m.gain>=0?css('--pos'):css('--neg')}">${sg(m.gain)}${yen(Math.abs(m.gain))}</b></div>`}},
+    series:assets.map(k=>{const s=sty(k);return {name:k,type:'bar',stack:'p',barCategoryGap:'40%',data:ms.map(m=>(m.by_asset||{})[k]||0),itemStyle:{color:s.c,borderColor:css('--bg'),borderWidth:1,decal:s.d}}})
+      .concat([{name:'入れたお金',type:'line',data:ms.map(m=>m.principal),symbol:'none',itemStyle:{color:css('--pos')},lineStyle:{width:2,type:'dashed',color:css('--pos')},z:5}])});
+  el('lg-perf').innerHTML=`<span><i class="dash" style="border-top-color:var(--pos)"></i>入れたお金</span>`+assets.map(k=>{const s=sty(k);return `<span><i style="--sw:${s.c};outline:1px solid var(--line2);${crypto.includes(k)?`background:repeating-linear-gradient(45deg,${s.c} 0 2px,var(--ink2) 2px 3px)`:''}"></i>${k}</span>`}).join('');
+  const nv=v=>`<span class="${v<0?'down':''}">${v<0?'−':''}${yen(Math.abs(v))}</span>`;
+  el('t-perf-y').innerHTML='<tr><th>年</th><th class="n">入れたお金</th><th class="n">年間リターン</th><th class="n">年末の評価額</th></tr>'
+    +P.years.map(y=>`<tr><td>${y.year}年${y.months<12?`（${y.months}か月）`:''}</td><td class="n">${nv(y.net_in)}</td><td class="n">${sp(y.ret,pc(y.ret))}</td><td class="n">${yen(y.end_value)}</td></tr>`).join('');
+  el('t-perf-m').innerHTML='<thead><tr><th>月</th><th class="n">入れたお金</th><th class="n">月末の評価額</th><th class="n">損益（累計）</th><th class="n">月間リターン</th></tr></thead>'
+    +ms.slice().reverse().map(m=>`<tr><td>${m.month.slice(0,4)}年${parseInt(m.month.slice(5))}月</td><td class="n">${nv(m.net_in)}</td><td class="n">${yen(m.value)}</td><td class="n">${sp(m.gain,yen(m.gain))}</td><td class="n">${sp(m.ret,pc(m.ret))}</td></tr>`).join('');
+}
 function renderAssets(){
+  renderPerf();
   const F=FILLS(),T=D.asset_trend||{},tms=D.months.filter(m=>T[m]);
   const pct=x=>`<span style="margin-left:8px;font-size:.85em;opacity:.85">${x}%</span>`;
   const tm=tms.filter(m=>m<=assetM()).pop()||tms[0];

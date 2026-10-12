@@ -206,6 +206,22 @@ html,body{overflow-x:hidden}
   #t-stocks tr.dt td{display:table-cell}
   #t-stocks td.rs{min-width:0}
 }
+/* ---- market ---- */
+.mk-note{font-size:12px;color:var(--ink3);margin:8px 0 0}
+.mk-sel{margin:0 0 18px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink3);letter-spacing:.1em}
+.mk-title{font-size:20px;font-weight:700;line-height:1.4;margin:0}
+.mk-sum{font-size:14px;margin:8px 0 28px;color:var(--ink2);white-space:pre-line}
+.mk-pt td.name{white-space:normal;max-width:none}
+.mk-pt td.name small{display:block;color:var(--ink2);font-size:11px;line-height:1.5;margin-top:3px}
+.mk-item{border-bottom:1px solid var(--line);padding:14px 0}
+.mk-item b{font-size:14px}
+.mk-item p{margin:6px 0 0;white-space:pre-line}
+.mk-item .imp{color:var(--ink2);font-size:13px}
+.mk-src{font-size:11px;margin-top:6px;color:var(--ink3);display:flex;flex-wrap:wrap;gap:2px 12px}
+.mk-src a{color:var(--ink3)}
+.mk-q{border:1px solid var(--line2);padding:16px 18px;margin-top:12px;white-space:pre-line}
+.mk-ct td{white-space:normal}
+@media (max-width:600px){.mk-pt th:nth-child(3),.mk-pt td:nth-child(3),.mk-pt th:nth-child(6),.mk-pt td:nth-child(6){display:none}.mk-pt td.name{max-width:none}.mk-title{font-size:17px}}
 .subh{font-size:13px;font-weight:700;letter-spacing:.06em;margin:28px 0 4px}
 #t-perf-m thead th{position:sticky;top:0;background:var(--bg)}
 @media (max-width:600px){#t-perf-m th:nth-child(3),#t-perf-m td:nth-child(3){display:none}#t-perf-y th,#t-perf-y td,#t-perf-m th,#t-perf-m td{padding-right:6px}}
@@ -239,6 +255,7 @@ html,body{overflow-x:hidden}
     <button data-p="expense">支出</button>
     <button data-p="income">収入</button>
     <button data-p="assets">資産</button>
+    <button data-p="market">マーケット</button>
     <button data-p="tx">明細</button>
     <button data-p="stocks">銘柄</button>
   </nav>
@@ -297,6 +314,8 @@ html,body{overflow-x:hidden}
     </div>
     <div class="tablewrap" style="max-height:72vh"><table id="t-tx"></table></div>
   </section>
+
+  <section id="p-market" class="panel"><div id="mk-root"></div></section>
 
   <section id="p-stocks" class="panel">
     <div class="figs" id="figs-stocks"></div>
@@ -459,7 +478,7 @@ function render(){
   document.querySelectorAll('h2,.note').forEach(h=>{const n=[...h.childNodes].filter(x=>x.nodeType===3).pop();if(!n)return;if(!h.dataset.t)h.dataset.t=n.textContent;n.textContent=M==='__range'?h.dataset.t.replace(/今月/g,'期間内'):h.dataset.t});
   renderHero();
   const on=document.querySelector('.panel.on').id;
-  ({'p-summary':renderSummary,'p-expense':renderExpense,'p-income':renderIncome,'p-assets':renderAssets,'p-tx':renderTx,'p-stocks':renderStocks})[on]();
+  ({'p-summary':renderSummary,'p-expense':renderExpense,'p-income':renderIncome,'p-assets':renderAssets,'p-tx':renderTx,'p-market':renderMarket,'p-stocks':renderStocks})[on]();
   setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),0);
 }
 
@@ -688,6 +707,42 @@ const stMoat=v=>v?`<span class="moat ${v==='独占'?'m1':v==='独走'?'m2':'m3'}
 function stDetail(r){
   const f=(l,v)=>`<div><span>${l}</span>${v==null||v===''?'-':stEsc(v)}</div>`;
   return `<tr class="dt"><td colspan="14"><div class="sd">${f('セクター',r.sector)}${f('AI関連',r.ai?'はい':'いいえ')}<div><span>5年リターン</span>${stPct(r.ret5y_pct)}</div><div><span>最大下落</span>${stPct(r.maxdd_pct)}</div><div><span>売上成長</span>${stPct(r.rev_growth_pct)}</div>${f('PEG',r.peg==null?null:r.peg.toFixed(1))}${f('EPS予想の方向',r.eps_revision)}${f('創業者経営',r.founder)}${f('既存ポートフォリオとの重複',r.overlap)}${f('購入先',r.broker)}${f('次のイベント',r.next_event)}<div class="full"><span>独占度</span>${stMoat(r.moat)}${r.moat_note?(r.moat?' ':'')+stEsc(r.moat_note):(r.moat?'':'-')}</div><div class="full"><span>メモ</span>${stEsc(r.note)||'-'}</div></div></td></tr>`;
+}
+
+function renderMarket(){
+  const MK=D.market||{prices:[],briefs:[]},prices=MK.prices||[],briefs=MK.briefs||[];
+  const E=x=>String(x==null?'':x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const root=el('mk-root');
+  const sel0=root.querySelector('#mk-sel');let idx=sel0?+sel0.value:0;if(!(idx>=0&&idx<briefs.length))idx=0;
+  const b=briefs[idx]||null,notes=(b&&b.mine_notes)||{};
+  const fv=p=>{const v=p.value;if(v==null)return '';
+    if(p.name.includes('金利'))return v.toFixed(2)+'%';
+    if(p.name.includes('ドル円'))return v.toFixed(2)+'円';
+    if(p.unit==='円')return '¥'+Math.round(v).toLocaleString();
+    return v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})};
+  const tbl=g=>{const rows=prices.filter(p=>p.group===g);if(!rows.length)return '<div class="empty">データなし</div>';
+    return '<div class="tablewrap" style="max-height:none"><table class="mk-pt"><thead><tr><th>銘柄</th><th class="n">価格</th><th class="n">1日</th><th class="n">1週</th><th class="n">1か月</th><th class="n">年初来</th></tr></thead><tbody>'+
+    rows.map(p=>`<tr><td class="name">${E(p.name)}${g==='mine'&&notes[p.name]?`<small>${E(notes[p.name])}</small>`:''}</td><td class="n">${E(fv(p))}</td><td class="n">${sg(p.d1,'pct')}</td><td class="n">${sg(p.w1,'pct')}</td><td class="n">${sg(p.m1,'pct')}</td><td class="n">${sg(p.ytd,'pct')}</td></tr>`).join('')+'</tbody></table></div>'};
+  const srcs=a=>a&&a.length?`<div class="mk-src">${a.map(x=>`<a href="${E(x.url)}" target="_blank" rel="noopener">${E(x.title||x.url)}</a>`).join('')}</div>`:'';
+  const blk=(t,inner)=>`<section class="block"><h2>${t}</h2>${inner}</section>`;
+  const paras=t=>String(t||'').split(/\n\s*\n/).map(x=>`<p>${E(x.trim())}</p>`).join('');
+  const jd=d=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(d||'');return m?`${m[1]}年${+m[2]}月${+m[3]}日号`:E(d)};
+  let h='';
+  if(briefs.length)h+=`<div class="mk-sel"><label for="mk-sel">号</label><select id="mk-sel">${briefs.map((x,i)=>`<option value="${i}"${i===idx?' selected':''}>${jd(x.date)}</option>`).join('')}</select></div>`;
+  else h+='<p class="mk-note" style="margin:0 0 20px">まだブリーフィングがありません。チャットで「브리핑」と頼むと作成されます</p>';
+  if(b){if(b.title)h+=`<h2 class="mk-title">${E(b.title)}</h2>`;
+    const sub=[b.period,b.summary].filter(Boolean);if(sub.length)h+=`<p class="mk-sum">${b.period?E(b.period)+(b.summary?'\n':''):''}${E(b.summary||'')}</p>`;}
+  h+=blk('わたしの資産',tbl('mine'))+blk('市場全体',tbl('market'));
+  if(b){
+    if(b.news&&b.news.length)h+=blk('今週動いたニュース',b.news.map(n=>`<div class="mk-item"><b>${E(n.title)}</b>${n.body?`<p>${E(n.body)}</p>`:''}${n.impact?`<p class="imp">わたしへの影響: ${E(n.impact)}</p>`:''}${srcs(n.sources)}</div>`).join(''));
+    if(b.concept)h+=blk('今週のキーワード',`<div class="mk-item"><b>#${E(b.concept.no)} ${E(b.concept.title)}</b>${paras(b.concept.body).replace(/<p>/g,'<p style="white-space:normal">')}</div>`);
+    if(b.hot&&b.hot.length)h+=blk('話題の銘柄',b.hot.map(x=>`<div class="mk-item"><b>${E(x.name)}${x.ticker?` (${E(x.ticker)})`:''}</b>${x.move?` <span class="num" style="margin-left:8px">${E(x.move)}</span>`:''}${x.why?`<p>${E(x.why)}</p>`:''}${srcs(x.sources)}</div>`).join(''));
+    if(b.calendar&&b.calendar.length)h+=blk('今週の予定','<div class="tablewrap" style="max-height:none"><table class="mk-ct"><thead><tr><th>日付</th><th>内容</th><th>なぜ重要か</th></tr></thead><tbody>'+b.calendar.map(c=>`<tr><td style="white-space:nowrap">${E(c.date)}</td><td>${E(c.what)}</td><td>${E(c.why)}</td></tr>`).join('')+'</tbody></table></div>');
+    if(b.question)h+=blk('考えてみよう',`<div class="mk-q">${E(b.question)}</div>`);
+  }
+  h+=`<p class="mk-note">価格は ${E(MK.asof||'')} 時点で自動取得（投信は基準価額、その他はYahoo Finance終値）。ニュースと解説はClaudeが調べて作成。売買の推奨ではありません。</p>`;
+  root.innerHTML=h;
+  const s=root.querySelector('#mk-sel');if(s)s.onchange=renderMarket;
 }
 function renderStocks(){
   const S=D.stocks||{rows:[]},all=S.rows||[];

@@ -221,6 +221,15 @@ html,body{overflow-x:hidden}
 .mk-src a{color:var(--ink3)}
 .mk-q{border:1px solid var(--line2);padding:16px 18px;margin-top:12px;white-space:pre-line}
 .mk-ct td{white-space:normal}
+.mk-term{border-bottom:1px dotted var(--ink3);cursor:help}
+.mk-term:focus-visible{outline:1px solid var(--ink3);outline-offset:2px}
+.mk-pop{position:absolute;z-index:50;width:max-content;max-width:min(320px,calc(100vw - 24px));background:var(--bg);border:1px solid var(--line2);box-shadow:0 4px 14px rgba(0,0,0,.12);padding:10px 12px;font-size:12px;line-height:1.6;color:var(--ink);white-space:pre-line}
+.mk-pop b{font-size:13px}.mk-pop i{font-style:normal;color:var(--ink2);margin-left:6px}.mk-pop div{margin-top:4px;color:var(--ink2)}
+details.mk-gl{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:8px 0;margin:0 0 28px}
+details.mk-gl summary{font-size:12px;color:var(--ink3);cursor:pointer;letter-spacing:.06em}
+details.mk-gl dl{margin:10px 0 2px}details.mk-gl dt{font-weight:700;font-size:13px;margin-top:12px}
+details.mk-gl dt i{font-style:normal;font-weight:400;color:var(--ink2);margin-left:6px;font-size:12px}
+details.mk-gl dd{margin:2px 0 0;font-size:13px;color:var(--ink2)}
 @media (max-width:600px){.mk-pt th:nth-child(3),.mk-pt td:nth-child(3),.mk-pt th:nth-child(6),.mk-pt td:nth-child(6){display:none}.mk-pt td.name{max-width:none}.mk-title{font-size:17px}}
 .subh{font-size:13px;font-weight:700;letter-spacing:.06em;margin:28px 0 4px}
 #t-perf-m thead th{position:sticky;top:0;background:var(--bg)}
@@ -722,28 +731,59 @@ function renderMarket(){
     return v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})};
   const tbl=g=>{const rows=prices.filter(p=>p.group===g);if(!rows.length)return '<div class="empty">データなし</div>';
     return '<div class="tablewrap" style="max-height:none"><table class="mk-pt"><thead><tr><th>銘柄</th><th class="n">価格</th><th class="n">1日</th><th class="n">1週</th><th class="n">1か月</th><th class="n">年初来</th></tr></thead><tbody>'+
-    rows.map(p=>`<tr><td class="name">${E(p.name)}${g==='mine'&&notes[p.name]?`<small>${E(notes[p.name])}</small>`:''}</td><td class="n">${E(fv(p))}</td><td class="n">${sg(p.d1,'pct')}</td><td class="n">${sg(p.w1,'pct')}</td><td class="n">${sg(p.m1,'pct')}</td><td class="n">${sg(p.ytd,'pct')}</td></tr>`).join('')+'</tbody></table></div>'};
+    rows.map(p=>`<tr><td class="name">${E(p.name)}${g==='mine'&&notes[p.name]?`<small>${G(notes[p.name])}</small>`:''}</td><td class="n">${E(fv(p))}</td><td class="n">${sg(p.d1,'pct')}</td><td class="n">${sg(p.w1,'pct')}</td><td class="n">${sg(p.m1,'pct')}</td><td class="n">${sg(p.ytd,'pct')}</td></tr>`).join('')+'</tbody></table></div>'};
   const srcs=a=>a&&a.length?`<div class="mk-src">${a.map(x=>`<a href="${E(x.url)}" target="_blank" rel="noopener">${E(x.title||x.url)}</a>`).join('')}</div>`:'';
   const blk=(t,inner)=>`<section class="block"><h2>${t}</h2>${inner}</section>`;
-  const paras=t=>String(t||'').split(/\n\s*\n/).map(x=>`<p>${E(x.trim())}</p>`).join('');
+  const paras=(t,f)=>String(t||'').split(/\n\s*\n/).map(x=>`<p>${(f||E)(x.trim())}</p>`).join('');
   const jd=d=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(d||'');return m?`${m[1]}年${+m[2]}月${+m[3]}日号`:E(d)};
+  const GL=MK.glossary||[],used=new Set();
+  const gm=[];GL.forEach((g,i)=>{const seen=new Set();[g.term,...(g.match||[])].forEach(m=>{m=String(m||'').trim();if(m.length>=2&&!seen.has(m)){seen.add(m);gm.push([E(m),i])}})});
+  gm.sort((a,b)=>b[0].length-a[0].length);
+  const gmap=new Map();gm.forEach(([m,i])=>{if(!gmap.has(m))gmap.set(m,i)});
+  const grx=gmap.size?new RegExp([...gmap.keys()].map(m=>m.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|'),'g'):null;
+  const G=t=>{const e=E(t);if(!grx)return e;const done=new Set();
+    return e.replace(grx,(m,off)=>{const i=gmap.get(m);
+      if(done.has(i))return m;
+      if(/&[#a-zA-Z0-9]*$/.test(e.slice(Math.max(0,off-8),off)))return m;
+      done.add(i);used.add(i);return `<span class="mk-term" data-g="${i}" tabindex="0">${m}</span>`})};
   let h='';
   if(briefs.length)h+=`<div class="mk-sel"><label for="mk-sel">号</label><select id="mk-sel">${briefs.map((x,i)=>`<option value="${i}"${i===idx?' selected':''}>${jd(x.date)}</option>`).join('')}</select></div>`;
   else h+='<p class="mk-note" style="margin:0 0 20px">まだブリーフィングがありません。チャットで「브리핑」と頼むと作成されます</p>';
   if(b){if(b.title)h+=`<h2 class="mk-title">${E(b.title)}</h2>`;
-    const sub=[b.period,b.summary].filter(Boolean);if(sub.length)h+=`<p class="mk-sum">${b.period?E(b.period)+(b.summary?'\n':''):''}${E(b.summary||'')}</p>`;}
+    const sub=[b.period,b.summary].filter(Boolean);if(sub.length)h+=`<p class="mk-sum">${b.period?E(b.period)+(b.summary?'\n':''):''}${G(b.summary||'')}</p>`;}
+  h+='\u0000GL';
   h+=blk('わたしの資産',tbl('mine'))+blk('市場全体',tbl('market'));
   if(b){
-    if(b.news&&b.news.length)h+=blk('今週動いたニュース',b.news.map(n=>`<div class="mk-item"><b>${E(n.title)}</b>${n.body?`<p>${E(n.body)}</p>`:''}${n.impact?`<p class="imp">わたしへの影響: ${E(n.impact)}</p>`:''}${srcs(n.sources)}</div>`).join(''));
-    if(b.concept)h+=blk('今週のキーワード',`<div class="mk-item"><b>#${E(b.concept.no)} ${E(b.concept.title)}</b>${paras(b.concept.body).replace(/<p>/g,'<p style="white-space:normal">')}</div>`);
-    if(b.hot&&b.hot.length)h+=blk('話題の銘柄',b.hot.map(x=>`<div class="mk-item"><b>${E(x.name)}${x.ticker?` (${E(x.ticker)})`:''}</b>${x.move?` <span class="num" style="margin-left:8px">${E(x.move)}</span>`:''}${x.why?`<p>${E(x.why)}</p>`:''}${srcs(x.sources)}</div>`).join(''));
-    if(b.calendar&&b.calendar.length)h+=blk('今週の予定','<div class="tablewrap" style="max-height:none"><table class="mk-ct"><thead><tr><th>日付</th><th>内容</th><th>なぜ重要か</th></tr></thead><tbody>'+b.calendar.map(c=>`<tr><td style="white-space:nowrap">${E(c.date)}</td><td>${E(c.what)}</td><td>${E(c.why)}</td></tr>`).join('')+'</tbody></table></div>');
-    if(b.question)h+=blk('考えてみよう',`<div class="mk-q">${E(b.question)}</div>`);
+    if(b.news&&b.news.length)h+=blk('今週動いたニュース',b.news.map(n=>`<div class="mk-item"><b>${G(n.title)}</b>${n.body?`<p>${G(n.body)}</p>`:''}${n.impact?`<p class="imp">わたしへの影響: ${G(n.impact)}</p>`:''}${srcs(n.sources)}</div>`).join(''));
+    if(b.concept)h+=blk('今週のキーワード',`<div class="mk-item"><b>#${E(b.concept.no)} ${G(b.concept.title)}</b>${paras(b.concept.body,G).replace(/<p>/g,'<p style="white-space:normal">')}</div>`);
+    if(b.hot&&b.hot.length)h+=blk('話題の銘柄',b.hot.map(x=>`<div class="mk-item"><b>${G(x.name)}${x.ticker?` (${E(x.ticker)})`:''}</b>${x.move?` <span class="num" style="margin-left:8px">${G(x.move)}</span>`:''}${x.why?`<p>${G(x.why)}</p>`:''}${srcs(x.sources)}</div>`).join(''));
+    if(b.calendar&&b.calendar.length)h+=blk('今週の予定','<div class="tablewrap" style="max-height:none"><table class="mk-ct"><thead><tr><th>日付</th><th>内容</th><th>なぜ重要か</th></tr></thead><tbody>'+b.calendar.map(c=>`<tr><td style="white-space:nowrap">${E(c.date)}</td><td>${G(c.what)}</td><td>${G(c.why)}</td></tr>`).join('')+'</tbody></table></div>');
+    if(b.question)h+=blk('考えてみよう',`<div class="mk-q">${G(b.question)}</div>`);
   }
   h+=`<p class="mk-note">価格は ${E(MK.asof||'')} 時点で自動取得（投信は基準価額、その他はYahoo Finance終値）。ニュースと解説はClaudeが調べて作成。売買の推奨ではありません。</p>`;
-  root.innerHTML=h;
+  const ul=[...used].sort((a,b)=>a-b);
+  h=h.replace('\u0000GL',ul.length?`<details class="mk-gl" open><summary>この号の用語（${ul.length}）</summary><dl>${ul.map(i=>{const g=GL[i];return `<dt>${E(g.term)}${g.alias?`<i>${E(g.alias)}</i>`:''}</dt><dd>${E(g.desc)}</dd>`}).join('')}</dl></details>`:'');
+  root.innerHTML=h;window.__mkGL=GL;
   const s=root.querySelector('#mk-sel');if(s)s.onchange=renderMarket;
 }
+(function(){
+  let pop=null,cur=null;
+  const E=x=>String(x==null?'':x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const close=()=>{if(pop){pop.remove();pop=null;cur=null}};
+  const open=t=>{const g=(window.__mkGL||[])[+t.dataset.g];if(!g)return;close();cur=t;
+    pop=document.createElement('div');pop.className='mk-pop';pop.setAttribute('role','tooltip');
+    pop.innerHTML=`<b>${E(g.term)}</b>${g.alias?`<i>${E(g.alias)}</i>`:''}<div>${E(g.desc)}</div>`;
+    document.body.appendChild(pop);
+    const r=t.getBoundingClientRect(),w=pop.offsetWidth,vw=document.documentElement.clientWidth;
+    let l=r.left+window.scrollX;l=Math.min(l,window.scrollX+vw-w-8);l=Math.max(l,window.scrollX+8);
+    pop.style.left=l+'px';pop.style.top=(r.bottom+window.scrollY+6)+'px'};
+  document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('.mk-term');
+    if(t){if(t===cur)close();else open(t);return}
+    if(!(e.target.closest&&e.target.closest('.mk-pop')))close()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')close();
+    else if(e.key==='Enter'&&e.target.classList&&e.target.classList.contains('mk-term')){e.preventDefault();e.target===cur?close():open(e.target)}});
+  window.addEventListener('resize',close);
+})();
 function renderStocks(){
   const S=D.stocks||{rows:[]},all=S.rows||[];
   const cnt=s=>all.filter(r=>r.status===s).length;

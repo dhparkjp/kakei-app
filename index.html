@@ -109,9 +109,8 @@ tr.total td{font-weight:700}
 .filters{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;margin:4px 0 14px}
 .filters label{font-size:11px;letter-spacing:.1em;color:var(--ink3);display:flex;flex-direction:column;gap:2px}
 .empty{color:var(--ink3);padding:24px 0;text-align:center}
-.up{color:var(--pos)}.down{color:var(--neg)}.up::before{content:"▲ ";font-size:10px}.down::before{content:"▼ ";font-size:10px}
-.band .up{color:var(--band-pos)}.band .down{color:var(--band-neg)}
-.fig .v.neg{color:var(--neg)}
+.sp{color:var(--pos)}.sn{color:var(--neg)}.sz{color:inherit}
+.band .sp{color:var(--band-pos)}.band .sn{color:var(--band-neg)}
 .pill{display:inline-block;border:1px solid var(--line2);border-radius:999px;padding:0 8px;font-size:11px;color:var(--ink2);line-height:18px}
 @media (prefers-reduced-motion:no-preference){.tabs button{transition:color .15s}}
 #b-fixed .bar,#b-diff .bar,#b-inc .bar,#b-assets .bar{grid-template-columns:minmax(200px,1fr) minmax(80px,180px) 130px}
@@ -182,7 +181,6 @@ html,body{overflow-x:hidden}
 .moat.m1{background:var(--ink);color:var(--bg)}.moat.m2{background:transparent;color:var(--ink)}.moat.m3{border-color:var(--ink3);color:var(--ink3);background:transparent;font-weight:400}
 .pick .moat{margin-left:6px}
 .sd div span.moat{display:inline-block;letter-spacing:0;margin-right:6px}
-.sp{color:var(--pos)}.sn{color:var(--neg)}
 .pickgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:14px}
 .pick{border:1px solid var(--line2);padding:14px 16px;min-width:0}
 .pick .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
@@ -277,7 +275,7 @@ html,body{overflow-x:hidden}
   <section id="p-income" class="panel">
     <div class="figs" id="figs-income"></div>
     <div class="two"><section class="block"><h2 data-ic="income">今月の収入 内訳</h2><div class="bars" id="b-inc"></div></section><section class="block" id="s-inc-trend" hidden><h2 data-ic="flow">月別の収入</h2><p class="note">給与の入金がそろった月のみ</p><div id="c-inc" class="chart"></div><div class="legend" id="lg-inc"></div></section></div>
-    <section class="block" id="s-salary"><h2 data-ic="flow">給与の推移（ウォン建て）</h2><p class="note">振込額（手取り）の月別。為替の影響を除くためウォンで表示。＊は賞与込み、▲は昇給</p><div id="c-salary" class="chart"></div><div class="legend" id="lg-salary"></div></section>
+    <section class="block" id="s-salary"><h2 data-ic="flow">給与の推移（ウォン建て）</h2><p class="note">振込額（手取り）の月別。為替の影響を除くためウォンで表示。＊は賞与込み、「昇給」は昇給した月</p><div id="c-salary" class="chart"></div><div class="legend" id="lg-salary"></div></section>
   </section>
 
   <section id="p-assets" class="panel">
@@ -373,6 +371,11 @@ const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim
 const FILLS=()=>[css('--f1'),css('--f2'),css('--f3'),css('--f4'),css('--f5')];
 const yen=v=>(v<0?'−':'')+'¥'+Math.round(Math.abs(v)).toLocaleString();
 const man=v=>{const a=Math.abs(v)/10000;return (v<0?'−':'')+(a>=100?Math.round(a):Math.round(a*10)/10)+'万'};
+const sg=(v,kind)=>{if(v==null||isNaN(v))return '';const a=Math.abs(v),r=kind==='pct'?Math.round(a*10)/10:Math.round(a);
+  if(r===0)return `<span class="sz">±0${kind==='pct'?'%':''}</span>`;
+  const body=kind==='pct'?r.toFixed(1)+'%':kind==='num'?r.toLocaleString():'¥'+r.toLocaleString();
+  return v>0?`<span class="sp">+${body}</span>`:`<span class="sn">−${body}</span>`};
+const yn=v=>v<0?sg(v):yen(v);
 const krw=v=>(v<0?'−':'')+'₩'+Math.round(Math.abs(v)).toLocaleString();
 const mlabel=m=>m==='__range'?(R1.slice(0,4)+'年'+parseInt(R1.slice(5))+'月〜'+(R2.slice(0,4)!==R1.slice(0,4)?R2.slice(0,4)+'年':'')+parseInt(R2.slice(5))+'月'):m.slice(0,4)+'年'+parseInt(m.slice(5))+'月';
 const mshort=m=>parseInt(m.slice(5))+'月';
@@ -390,10 +393,10 @@ function chart(id,opt){const e=el(id);if(!charts[id])charts[id]=echarts.init(e);
 function fig(l,v,s,cls,k){return `<div class="fig"><div class="l">${k?ic(k):''}${l}</div><div class="v ${cls||''}">${v}</div><div class="s">${s||''}</div></div>`}
 function hero(l,v,s,k,cls){return `<div class="h"><div class="l">${k?ic(k):''}${l}</div><div class="v ${cls||''}">${v}</div><div class="s">${s||''}</div></div>`}
 function prev(m){if(m==='__range')return null;const i=D.months.indexOf(m);return i>0?D.months[i-1]:null}
-function delta(cur,pv){if(pv==null)return '';const d=cur-pv;return `<span class="${d>=0?'up':'down'}">${yen(d)}<span style="margin-left:6px;color:var(--ink3)">前月比</span></span>`}
+function delta(cur,pv){if(pv==null)return '';const d=cur-pv;return `<span>${sg(d)}<span style="margin-left:6px;color:var(--ink3)">前月比</span></span>`}
 function bars(id,entries,total,opt={}){
   const max=Math.max(...entries.map(([,v])=>Math.abs(v)),1);
-  el(id).innerHTML=entries.length?entries.map(([k,v])=>`<div class="bar ${v<0?'neg':''}" data-k="${k}"><span class="k">${opt.label?'':ic(k)}${opt.label?opt.label(k):ja(k,CAT)}</span><div><div class="t ${opt.kr&&opt.kr(k)?'kr':''}" style="width:${Math.abs(v)/max*100}%"></div></div><span class="v ${v<0?'down':''}" style="${v<0?'':''}">${yen(v).replace(/^−/,'')}${total&&v>0?`<small>${Math.round(v/total*100)}%</small>`:'<small></small>'}</span></div><div class="detail" data-for="${k}"></div>`).join(''):'<div class="empty">記録なし</div>';
+  el(id).innerHTML=entries.length?entries.map(([k,v])=>`<div class="bar ${v<0?'neg':''}" data-k="${k}"><span class="k">${opt.label?'':ic(k)}${opt.label?opt.label(k):ja(k,CAT)}</span><div><div class="t ${opt.kr&&opt.kr(k)?'kr':''}" style="width:${Math.abs(v)/max*100}%"></div></div><span class="v">${yn(v)}${total&&v>0?`<small>${Math.round(v/total*100)}%</small>`:'<small></small>'}</span></div><div class="detail" data-for="${k}"></div>`).join(''):'<div class="empty">記録なし</div>';
   el(id).querySelectorAll('.bar').forEach(b=>b.onclick=()=>{
     const k=b.dataset.k,d=b.nextElementSibling;const open=b.classList.toggle('open');d.classList.toggle('on',open);if(!open)return;
     const rows=D.transactions.filter(t=>inM(t.month)&&(opt.field||'category')&&t[opt.field||'category']===k).sort((a,b)=>b.jpy-a.jpy);
@@ -477,7 +480,7 @@ function renderBudget(){
   const cms=D.months.filter(m=>complete(m)),n=cms.length;if(!n){el('s-outlook').hidden=true;return}
   const avg=f=>cms.reduce((a,m)=>a+f(m),0)/n;
   const B=avg(baseIncome),FX=avg(m=>D.expense[m].fixed_jpy),V=avg(m=>D.expense[m].variable_jpy),T=avg(tripSpend);
-  const cell=v=>`<b style="font:inherit;font-weight:800;color:var(${v>=0?'--pos':'--neg'})">${v>=0?'+':'−'}${yen(Math.abs(v))}</b>`;
+  const cell=v=>`<b style="font:inherit;font-weight:800">${sg(v)}</b>`;
   el('n-outlook').textContent=`手当を除いた収入で、${parseInt(cms[0].slice(5))}〜${parseInt(cms[n-1].slice(5))}月と同じように暮らした場合の毎月の収支（収入 ${man(B)}・決まって出るお金 ${man(FX)}・自由に使ったお金 ${man(V)} の平均）`;
   el('outlook').innerHTML=`<table><tr><th>NISA積立</th><th class="n">毎月の収支</th></tr><tr><td>今のまま 20万</td><td class="n">${cell(B-FX-V-200000)}</td></tr><tr><td>10万に減らす</td><td class="n">${cell(B-FX-V-100000)}</td></tr></table>
    <p class="note" style="margin-top:10px">プラスなら毎月貯金が増え、マイナスなら預金を取り崩すペース</p>`;
@@ -490,7 +493,7 @@ function renderSummary(){
       {name:'収入',type:'bar',data:ms.map(m=>D.income[m].total_jpy),itemStyle:{color:F[0]},barGap:'15%',barCategoryGap:'35%'},
       {name:'支出',type:'bar',data:ms.map(m=>D.expense[m].total_jpy),itemStyle:{color:F[2]}},
       {name:'投資積立',type:'bar',data:ms.map(m=>D.invest[m].total_jpy),itemStyle:{color:F[4],borderColor:css('--line2'),borderWidth:1}},
-      {name:'手元に残るお金',type:'line',data:ms.map(m=>{const v=D.income[m].total_jpy-D.expense[m].total_jpy-D.invest[m].total_jpy;return {value:v,itemStyle:{color:v<0?css('--neg'):css('--pos')}}}),lineStyle:{type:'dashed',width:2,color:css('--ink')},symbol:'circle',symbolSize:9}
+      {name:'手元に残るお金',type:'line',tooltip:{valueFormatter:v=>sg(v)},data:ms.map(m=>{const v=D.income[m].total_jpy-D.expense[m].total_jpy-D.invest[m].total_jpy;return {value:v,itemStyle:{color:v<0?css('--neg'):css('--pos')}}}),lineStyle:{type:'dashed',width:2,color:css('--ink')},symbol:'circle',symbolSize:9}
     ]});
   const e=D.expense[M];
   const pos=Object.entries(e.by_category).filter(([,v])=>v>0);const gross=pos.reduce((a,[,v])=>a+v,0);
@@ -513,7 +516,7 @@ function renderSummary(){
   const p=prev(M);
   if(p&&complete(p)){const a=D.expense[M].by_category,b=D.expense[p].by_category;const keys=new Set([...Object.keys(a),...Object.keys(b)]);
     const diff=[...keys].map(k=>[k,(a[k]||0)-(b[k]||0)]).filter(([,v])=>Math.abs(v)>=5000).sort((x,y)=>Math.abs(y[1])-Math.abs(x[1])).slice(0,6);
-    el('s-diff').style.display='';el('b-diff').innerHTML=diff.length?diff.map(([k,v])=>`<div class="bar" style="cursor:default"><span class="k">${ic(k)}${ja(k,CAT)}</span><div><div class="t" style="width:${Math.abs(v)/Math.abs(diff[0][1])*100}%;background:${v>0?'var(--pos)':'var(--neg)'}"></div></div><span class="v ${v>0?'up':'down'}">${yen(v)}<small></small></span></div>`).join(''):'<div class="empty">大きな変化なし</div>';
+    el('s-diff').style.display='';el('b-diff').innerHTML=diff.length?diff.map(([k,v])=>`<div class="bar" style="cursor:default"><span class="k">${ic(k)}${ja(k,CAT)}</span><div><div class="t" style="width:${Math.abs(v)/Math.abs(diff[0][1])*100}%;background:${v>0?'var(--pos)':'var(--neg)'}"></div></div><span class="v">${sg(v)}<small></small></span></div>`).join(''):'<div class="empty">大きな変化なし</div>';
   } else el('s-diff').style.display='none';
 }
 
@@ -534,7 +537,7 @@ function renderOneline(){
   const tr=D.transactions.filter(t=>t.trip&&inM(t.month));const tSum=tr.reduce((a,t)=>a+t.jpy,0);
   if(tSum>=30000){const names=[...new Set(tr.map(t=>t.trip))].join('・');el('oneline').innerHTML=`${lbl}は${pn(net)}。いちばん大きかったのは旅行「${names}」の <b>${yen(tSum)}</b>。`;return}
   const p=prev(M);if(p){const a=D.expense[M].by_category,b=D.expense[p].by_category;const d=Object.keys({...a,...b}).map(k=>[k,(a[k]||0)-(b[k]||0)]).filter(([k])=>!['경비정산','가족정산'].includes(k)).sort((x,y)=>Math.abs(y[1])-Math.abs(x[1]))[0];
-    if(d&&Math.abs(d[1])>=10000){el('oneline').innerHTML=`${lbl}は${pn(net)}。先月との差がいちばん大きいのは${ja(d[0],CAT)}（${d[1]>0?'+':'−'}${yen(Math.abs(d[1]))}）。`;return}}
+    if(d&&Math.abs(d[1])>=10000){el('oneline').innerHTML=`${lbl}は${pn(net)}。先月との差がいちばん大きいのは${ja(d[0],CAT)}（${sg(d[1])}）。`;return}}
   el('oneline').innerHTML=`${lbl}は${pn(net)}。`;
 }
 function renderExpense(){
@@ -583,7 +586,7 @@ function renderIncome(){
   const lines=SAL.map(([ks,n],i)=>{const v=ms.map(m=>{const t=ks.reduce((a,k)=>a+((D.income[m].by_source[k]||{}).krw||0),0);return t||null});
     const vals=v.filter(x=>x!=null).sort((a,b)=>a-b),med=vals[Math.floor(vals.length/2)]||0;const marks=[];let base=null;
     v.forEach((x,i)=>{if(x==null)return;if(x>med*1.15){marks.push({coord:[i,x],value:'＊賞与込み'});return}
-      if(base!=null&&x>base*1.03&&v.slice(i+1).filter(y=>y!=null&&Math.abs(y-x)/x<0.03).length>=1)marks.push({coord:[i,x],value:'▲昇給'});base=x});
+      if(base!=null&&x>base*1.03&&v.slice(i+1).filter(y=>y!=null&&Math.abs(y-x)/x<0.03).length>=1)marks.push({coord:[i,x],value:'昇給'});base=x});
     return {name:n,type:'line',data:v,connectNulls:false,symbol:'circle',symbolSize:7,itemStyle:{color:[css('--ink'),css('--f2'),css('--f3')][i]},lineStyle:{width:2,type:i===2?'dashed':'solid'},
       markPoint:{symbol:'rect',symbolSize:1,label:{show:true,position:'top',color:css('--ink'),fontFamily:font,fontSize:11,formatter:p=>p.value},data:marks}}});
   chart('c-salary',{...base(),tooltip:{...base().tooltip,valueFormatter:v=>v==null?'-':krw(v)},grid:{left:56,right:24,top:30,bottom:28},xAxis:xcat(ms),yAxis:yval(v=>Math.round(v/10000)+'万'),series:lines});
@@ -592,16 +595,14 @@ function renderIncome(){
 
 function renderPerf(){
   const P=D.perf,sec=el('s-perf');sec.hidden=!P;if(!P)return;
-  const F=FILLS(),t=P.total,sg=v=>v>0?'+':v<0?'−':'';
+  const F=FILLS(),t=P.total;
   const jd=d=>{const[y,m,dd]=d.split('-');return y+'年'+parseInt(m)+'月'+parseInt(dd)+'日'};
   const md=d=>parseInt(d.slice(5,7))+'/'+parseInt(d.slice(8));
-  const pc=v=>v==null?'':sg(v)+Math.abs(v).toFixed(1)+'%';
-  const cl=v=>v>0?'up':v<0?'down':'';
-  const sp=(v,txt)=>v==null?'':`<span class="${cl(v)}">${txt}</span>`;
+  const pc=v=>sg(v,'pct');
   el('n-perf').innerHTML=`${jd(P.start)}から${jd(P.asof)}まで。対象: ${P.accounts.join('・')}${(P.missing||[]).length?' ／ '+P.missing.join('、')+'（まだ含まれていません）':''}`;
-  el('figs-perf').innerHTML=fig('入れたお金',yen(t.principal),`買った額 ${yen(t.invested_gross)} − 売った額 ${yen(t.withdrawn)}`,'','asset')
+  el('figs-perf').innerHTML=fig('入れたお金',yn(t.principal),`買った額 ${yen(t.invested_gross)} − 売った額 ${yen(t.withdrawn)}`,'','asset')
     +fig('いまの評価額',yen(t.value),md(P.asof)+' 時点','','invest')
-    +fig('増えたお金',sg(t.gain)+yen(Math.abs(t.gain)),`累計 ${pc(t.twr_total)}`,t.gain<0?'neg':'','net').replace('class="v "','class="v" style="color:var(--pos)"')
+    +fig('増えたお金',sg(t.gain),`累計 ${pc(t.twr_total)}`,'','net')
     +fig('年あたりの成績',pc(t.irr),'入れた時期を考慮した年平均','','rate');
   const ms=P.months,order=['S&P500','FANG+','SpaceX','BTC','ETH','XRP'];
   const all=[...new Set(ms.flatMap(m=>Object.keys(m.by_asset||{})))];
@@ -615,20 +616,20 @@ function renderPerf(){
   chart('c-perf',{...base(),xAxis:{...xcat(xs),data:xs.map(lab)},yAxis:yval(),
     tooltip:{...base().tooltip,trigger:'axis',formatter:ps=>{const i=ps[0].dataIndex,m=ms[i];
       const rows=ps.filter(p=>p.seriesType==='bar'&&p.value).reverse().map(p=>`<div style="display:flex;justify-content:space-between;gap:16px"><span>${p.marker}${p.seriesName}</span><b>${yen(p.value)}</b></div>`).join('');
-      return `<b>${m.month.slice(0,4)}年${parseInt(m.month.slice(5))}月</b>${rows}<div style="display:flex;justify-content:space-between;gap:16px;border-top:1px solid ${css('--line2')};margin-top:4px;padding-top:4px"><span>合計</span><b>${yen(m.value)}</b></div><div style="display:flex;justify-content:space-between;gap:16px"><span>入れたお金</span><b>${yen(m.principal)}</b></div><div style="display:flex;justify-content:space-between;gap:16px"><span>損益</span><b style="color:${m.gain>=0?css('--pos'):css('--neg')}">${sg(m.gain)}${yen(Math.abs(m.gain))}</b></div>`}},
+      return `<b>${m.month.slice(0,4)}年${parseInt(m.month.slice(5))}月</b>${rows}<div style="display:flex;justify-content:space-between;gap:16px;border-top:1px solid ${css('--line2')};margin-top:4px;padding-top:4px"><span>合計</span><b>${yen(m.value)}</b></div><div style="display:flex;justify-content:space-between;gap:16px"><span>入れたお金</span><b>${yn(m.principal)}</b></div><div style="display:flex;justify-content:space-between;gap:16px"><span>損益</span><b>${sg(m.gain)}</b></div>`}},
     series:assets.map(k=>{const s=sty(k);return {name:k,type:'bar',stack:'p',barCategoryGap:'40%',data:ms.map(m=>(m.by_asset||{})[k]||0),itemStyle:{color:s.c,borderColor:css('--bg'),borderWidth:1,decal:s.d}}})
       .concat([{name:'入れたお金',type:'line',data:ms.map(m=>m.principal),symbol:'none',itemStyle:{color:css('--pos')},lineStyle:{width:2,type:'dashed',color:css('--pos')},z:5}])});
   el('lg-perf').innerHTML=`<span><i class="dash" style="border-top-color:var(--pos)"></i>入れたお金</span>`+assets.map(k=>{const s=sty(k);return `<span><i style="--sw:${s.c};outline:1px solid var(--line2);${crypto.includes(k)?`background:repeating-linear-gradient(45deg,${s.c} 0 2px,var(--ink2) 2px 3px)`:''}"></i>${k}</span>`}).join('');
-  const nv=v=>`<span class="${v<0?'down':''}">${v<0?'−':''}${yen(Math.abs(v))}</span>`;
+  const nv=yn;
   el('t-perf-y').innerHTML='<tr><th>年</th><th class="n">入れたお金</th><th class="n">年間リターン</th><th class="n">年末の評価額</th></tr>'
-    +P.years.map(y=>`<tr><td>${y.year}年${y.months<12?`（${y.months}か月）`:''}</td><td class="n">${nv(y.net_in)}</td><td class="n">${sp(y.ret,pc(y.ret))}</td><td class="n">${yen(y.end_value)}</td></tr>`).join('');
+    +P.years.map(y=>`<tr><td>${y.year}年${y.months<12?`（${y.months}か月）`:''}</td><td class="n">${nv(y.net_in)}</td><td class="n">${pc(y.ret)}</td><td class="n">${yen(y.end_value)}</td></tr>`).join('');
   el('t-perf-m').innerHTML='<thead><tr><th>月</th><th class="n">入れたお金</th><th class="n">月末の評価額</th><th class="n">損益（累計）</th><th class="n">月間リターン</th></tr></thead>'
-    +ms.slice().reverse().map(m=>`<tr><td>${m.month.slice(0,4)}年${parseInt(m.month.slice(5))}月</td><td class="n">${nv(m.net_in)}</td><td class="n">${yen(m.value)}</td><td class="n">${sp(m.gain,yen(m.gain))}</td><td class="n">${sp(m.ret,pc(m.ret))}</td></tr>`).join('');
+    +ms.slice().reverse().map(m=>`<tr><td>${m.month.slice(0,4)}年${parseInt(m.month.slice(5))}月</td><td class="n">${nv(m.net_in)}</td><td class="n">${yen(m.value)}</td><td class="n">${sg(m.gain)}</td><td class="n">${pc(m.ret)}</td></tr>`).join('');
 }
 function renderAssets(){
   renderPerf();
   const F=FILLS(),T=D.asset_trend||{},tms=D.months.filter(m=>T[m]);
-  const pct=x=>`<span style="margin-left:8px;font-size:.85em;opacity:.85">${x}%</span>`;
+  const pct=x=>`<span style="margin-left:8px;font-size:.85em">${sg(x,'pct')}</span>`;
   const tm=tms.filter(m=>m<=assetM()).pop()||tms[0];
   const dms=D.months.filter(m=>D.assets[m]);const am=dms.filter(m=>m<=assetM()).pop()||dms[dms.length-1];const a=am?D.assets[am]:null;
   if(!tm&&!a){el('figs-assets').innerHTML=fig('投資資産','記録なし','');return}
@@ -636,7 +637,7 @@ function renderAssets(){
   const inv=a?a.items.filter(x=>x.class==='NISA'||x.class==='크립토'):[],invV=inv.reduce((s,x)=>s+x.value_jpy,0),invP=inv.reduce((s,x)=>s+(x.principal_jpy||0),0);
   const acc=['楽天証券','SBI証券','仮想通貨'];
   el('figs-assets').innerHTML=fig('投資資産',yen(t.total_jpy),(pt?delta(t.total_jpy,pt.total_jpy):'')+(pt?'':mlabel(tm)+'末'),'','asset')
-    +(invP&&am===tm?fig('評価損益',(invV>=invP?'+':'')+yen(invV-invP),`<span class="${invV>=invP?'up':'down'}">${((invV-invP)/invP*100).toFixed(1)}%</span><span style="margin-left:8px">元本 ${yen(invP)}</span>`,'','invest'):'')
+    +(invP&&am===tm?fig('評価損益',sg(invV-invP),`${sg((invV-invP)/invP*100,'pct')}<span style="margin-left:8px">元本 ${yen(invP)}</span>`,'','invest'):'')
     +acc.map(k=>{const v=t.by_account[k]||0,pv=pt?(pt.by_account[k]||0):null;return fig(k,yen(v),pv!=null?delta(v,pv):mlabel(tm)+'末')}).join('');
   el('s-asset-trend').hidden=tms.length<2;
   if(tms.length>=2){chart('c-assets',{...base(),xAxis:xcat(tms),yAxis:yval(),tooltip:{...base().tooltip,trigger:'axis'},
@@ -654,7 +655,7 @@ function renderAssets(){
     series:[{type:'pie',radius:['58%','90%'],center:['50%','50%'],data:dItems.map(x=>({name:x.item,value:x.value_jpy,itemStyle:{color:dcol(x),borderColor:css('--bg'),borderWidth:2,decal:x.class==='크립토'?{symbol:'rect',symbolSize:1,dashArrayX:[1,0],dashArrayY:[2,4],rotation:Math.PI/4,color:css('--ink2')}:null}})),label:{show:false},emphasis:{scale:true,scaleSize:5}}],
     graphic:[{type:'text',left:'center',top:'center',style:{text:yen(dTot),fill:css('--ink'),font:'800 18px '+font,textAlign:'center'}}]});
   el('lg-donut').innerHTML=dItems.map(x=>`<span style="display:flex;width:100%"><i style="--sw:${dcol(x)};outline:1px solid var(--line2);${x.class==='크립토'?`background:repeating-linear-gradient(45deg,${F[4]} 0 2px,var(--ink2) 2px 3px)`:''}"></i>${x.item}<b style="margin-left:auto;padding-left:12px;font-family:Manrope">${Math.round(x.value_jpy/dTot*100)}%</b></span>`).join('');
-  el('t-assets').innerHTML='<tr><th>銘柄</th><th>区分</th><th class="n">評価額</th><th class="n">元本</th><th class="n">損益</th></tr>'+inv.map(x=>{const g=x.principal_jpy!=null?x.value_jpy-x.principal_jpy:null;return `<tr><td class="name">${x.item}</td><td class="muted">${ja(x.class,CLS)}</td><td class="n">${yen(x.value_jpy)}</td><td class="n">${x.principal_jpy!=null?yen(x.principal_jpy):'-'}</td><td class="n">${g==null?'-':`<span class="${g>=0?'up':'down'}">${yen(g)}${pct((g/x.principal_jpy*100).toFixed(1))}</span>`}</td></tr>`}).join('')+`<tr class="total"><td>合計</td><td></td><td class="n">${yen(invV)}</td><td class="n">${invP?yen(invP):'-'}</td><td class="n">${invP?`<span class="${invV>=invP?'up':'down'}">${yen(invV-invP)}${pct(((invV-invP)/invP*100).toFixed(1))}</span>`:'-'}</td></tr>`;
+  el('t-assets').innerHTML='<tr><th>銘柄</th><th>区分</th><th class="n">評価額</th><th class="n">元本</th><th class="n">損益</th></tr>'+inv.map(x=>{const g=x.principal_jpy!=null?x.value_jpy-x.principal_jpy:null;return `<tr><td class="name">${x.item}</td><td class="muted">${ja(x.class,CLS)}</td><td class="n">${yen(x.value_jpy)}</td><td class="n">${x.principal_jpy!=null?yen(x.principal_jpy):'-'}</td><td class="n">${g==null?'-':`${sg(g)}${pct(g/x.principal_jpy*100)}`}</td></tr>`}).join('')+`<tr class="total"><td>合計</td><td></td><td class="n">${yen(invV)}</td><td class="n">${invP?yen(invP):'-'}</td><td class="n">${invP?`${sg(invV-invP)}${pct((invV-invP)/invP*100)}`:'-'}</td></tr>`;
 }
 
 function renderTx(){
@@ -671,7 +672,7 @@ const STCOLS=[['name','銘柄',0],['market','市場',0],['moat','独占度',0],[
 let stSort={k:null,desc:false},stOpen=null;
 const stEsc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const stNum=(v,d)=>v==null?'-':v.toLocaleString(undefined,{minimumFractionDigits:d||0,maximumFractionDigits:d||0});
-const stPct=v=>v==null?'-':`<span class="${v<0?'sn':v>0?'sp':''}">${v>0?'+':v<0?'−':''}${Math.abs(v).toFixed(1)}%</span>`;
+const stPct=v=>v==null?'-':sg(v,'pct');
 const stPx=r=>r.price==null?'-':stNum(r.price,r.price<1000?2:0)+' <small style="display:inline;color:var(--ink3)">'+stEsc(r.currency)+'</small>';
 const stGr=r=>[r.q_grade,r.g_grade,r.p_grade,r.low_grade].map(g=>g||'-').join(' / ');
 function stCmp(a,b){

@@ -225,11 +225,22 @@ html,body{overflow-x:hidden}
 .mk-term:focus-visible{outline:1px solid var(--ink3);outline-offset:2px}
 .mk-pop{position:absolute;z-index:50;width:max-content;max-width:min(320px,calc(100vw - 24px));background:var(--bg);border:1px solid var(--line2);box-shadow:0 4px 14px rgba(0,0,0,.12);padding:10px 12px;font-size:12px;line-height:1.6;color:var(--ink);white-space:pre-line}
 .mk-pop b{font-size:13px}.mk-pop i{font-style:normal;color:var(--ink2);margin-left:6px}.mk-pop div{margin-top:4px;color:var(--ink2)}
-details.mk-gl{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:8px 0;margin:0 0 28px}
-details.mk-gl summary{font-size:12px;color:var(--ink3);cursor:pointer;letter-spacing:.06em}
-details.mk-gl dl{margin:10px 0 2px}details.mk-gl dt{font-weight:700;font-size:13px;margin-top:12px}
-details.mk-gl dt i{font-style:normal;font-weight:400;color:var(--ink2);margin-left:6px;font-size:12px}
-details.mk-gl dd{margin:2px 0 0;font-size:13px;color:var(--ink2)}
+details.mk-d{border-top:1px solid var(--line);padding:8px 0;margin:0}
+details.mk-d>summary,details.mk-more>summary{font-size:12px;color:var(--ink3);cursor:pointer;letter-spacing:.06em}
+details.mk-fold{border-top:1px solid var(--line);padding:10px 0}
+details.mk-fold:last-of-type{border-bottom:1px solid var(--line)}
+details.mk-fold>summary{font-size:13px;color:var(--ink2);cursor:pointer;letter-spacing:.06em}
+details.mk-fold[open]>summary{margin-bottom:10px}
+details.mk-more{margin-top:8px}
+details.mk-more>div{margin-top:6px}
+.mk-pts{margin:8px 0 28px;padding-left:20px;font-size:14px;color:var(--ink2)}.mk-pts li{margin:3px 0}
+.mk-pt1{margin:6px 0 0;font-size:14px;color:var(--ink2);white-space:normal}
+.mk-cal{list-style:none;margin:0;padding:0}.mk-cal li{padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}.mk-cal li span{color:var(--ink3);margin-right:10px;white-space:nowrap}
+.mk-foldwrap{margin-top:28px}
+details.mk-fold dl{margin:10px 0 2px}details.mk-fold dt{font-weight:700;font-size:13px;margin-top:12px}
+details.mk-fold dt i{font-style:normal;font-weight:400;color:var(--ink2);margin-left:6px;font-size:12px}
+details.mk-fold dd{margin:2px 0 0;font-size:13px;color:var(--ink2)}
+.mk-item,.mk-item p,.mk-q{overflow-wrap:anywhere}
 @media (max-width:600px){.mk-pt th:nth-child(3),.mk-pt td:nth-child(3),.mk-pt th:nth-child(6),.mk-pt td:nth-child(6){display:none}.mk-pt td.name{max-width:none}.mk-title{font-size:17px}}
 .subh{font-size:13px;font-weight:700;letter-spacing:.06em;margin:28px 0 4px}
 #t-perf-m thead th{position:sticky;top:0;background:var(--bg)}
@@ -749,20 +760,31 @@ function renderMarket(){
   let h='';
   if(briefs.length)h+=`<div class="mk-sel"><label for="mk-sel">号</label><select id="mk-sel">${briefs.map((x,i)=>`<option value="${i}"${i===idx?' selected':''}>${jd(x.date)}</option>`).join('')}</select></div>`;
   else h+='<p class="mk-note" style="margin:0 0 20px">まだブリーフィングがありません。チャットで「브리핑」と頼むと作成されます</p>';
+  const det=(lab,inner)=>`<details class="mk-more"><summary>${lab}</summary><div>${inner}</div></details>`;
+  const fold=(lab,inner)=>`<details class="mk-fold"><summary>${lab}</summary>${inner}</details>`;
   if(b){if(b.title)h+=`<h2 class="mk-title">${E(b.title)}</h2>`;
-    const sub=[b.period,b.summary].filter(Boolean);if(sub.length)h+=`<p class="mk-sum">${b.period?E(b.period)+(b.summary?'\n':''):''}${G(b.summary||'')}</p>`;}
-  h+='\u0000GL';
-  h+=blk('わたしの資産',tbl('mine'))+blk('市場全体',tbl('market'));
+    const pts=(b.points||[]).filter(Boolean);
+    h+=`<p class="mk-sum" style="margin-bottom:${pts.length||!b.summary?'8px':'28px'}">${b.period?E(b.period):''}${!pts.length&&b.summary?(b.period?'\n':'')+G(b.summary):''}</p>`;
+    if(pts.length)h+=blk('今週のポイント',`<ul class="mk-pts" style="margin-top:0">${pts.map(x=>`<li>${G(x)}</li>`).join('')}</ul>`);}
+  h+=blk('わたしの資産',tbl('mine'));
   if(b){
-    if(b.news&&b.news.length)h+=blk('今週動いたニュース',b.news.map(n=>`<div class="mk-item"><b>${G(n.title)}</b>${n.body?`<p>${G(n.body)}</p>`:''}${n.impact?`<p class="imp">わたしへの影響: ${G(n.impact)}</p>`:''}${srcs(n.sources)}</div>`).join(''));
-    if(b.concept)h+=blk('今週のキーワード',`<div class="mk-item"><b>#${E(b.concept.no)} ${G(b.concept.title)}</b>${paras(b.concept.body,G).replace(/<p>/g,'<p style="white-space:normal">')}</div>`);
-    if(b.hot&&b.hot.length)h+=blk('話題の銘柄',b.hot.map(x=>`<div class="mk-item"><b>${G(x.name)}${x.ticker?` (${E(x.ticker)})`:''}</b>${x.move?` <span class="num" style="margin-left:8px">${G(x.move)}</span>`:''}${x.why?`<p>${G(x.why)}</p>`:''}${srcs(x.sources)}</div>`).join(''));
-    if(b.calendar&&b.calendar.length)h+=blk('今週の予定','<div class="tablewrap" style="max-height:none"><table class="mk-ct"><thead><tr><th>日付</th><th>内容</th><th>なぜ重要か</th></tr></thead><tbody>'+b.calendar.map(c=>`<tr><td style="white-space:nowrap">${E(c.date)}</td><td>${G(c.what)}</td><td>${G(c.why)}</td></tr>`).join('')+'</tbody></table></div>');
+    if(b.news&&b.news.length)h+=blk('今週のニュース',b.news.map(n=>{
+      const d=(n.body?`<p>${G(n.body)}</p>`:'')+(n.impact?`<p class="imp">わたしへの影響: ${G(n.impact)}</p>`:'')+srcs(n.sources);
+      return `<div class="mk-item"><b>${G(n.title)}</b>${n.point?`<p class="mk-pt1">${G(n.point)}</p>`:''}${d?det('詳しく',d):''}</div>`}).join(''));
+    if(b.concept){const c=b.concept,full=paras(c.body,G).replace(/<p>/g,'<p style="white-space:normal">');
+      h+=blk('今週のキーワード',`<div class="mk-item"><b>#${E(c.no)} ${G(c.title)}</b>${c.point?`<p class="mk-pt1">${G(c.point)}</p>`:''}${c.body?(c.point?det('詳しく読む',full):full):''}</div>`)}
+    if(b.calendar&&b.calendar.length){const cal=b.calendar;let key=cal.filter(c=>c.key===true);if(!key.length)key=cal.slice(0,3);
+      const full='<div class="tablewrap" style="max-height:none"><table class="mk-ct"><thead><tr><th>日付</th><th>内容</th><th>なぜ重要か</th></tr></thead><tbody>'+cal.map(c=>`<tr><td style="white-space:nowrap">${E(c.date)}</td><td>${G(c.what)}</td><td>${G(c.why)}</td></tr>`).join('')+'</tbody></table></div>';
+      h+=blk('今週の予定',`<ul class="mk-cal">${key.map(c=>`<li><span>${E(c.date)}</span>${G(c.what)}</li>`).join('')}</ul>`+det('すべての予定',full))}
     if(b.question)h+=blk('考えてみよう',`<div class="mk-q">${G(b.question)}</div>`);
   }
+  let fl=fold('市場全体',tbl('market'));
+  if(b&&b.hot&&b.hot.length)fl+=fold('話題の銘柄',b.hot.map(x=>`<div class="mk-item"><b>${G(x.name)}${x.ticker?` (${E(x.ticker)})`:''}</b>${x.move?` <span class="num" style="margin-left:8px">${G(x.move)}</span>`:''}${x.why?`<p>${G(x.why)}</p>`:''}${srcs(x.sources)}</div>`).join(''));
+  h+='\u0000FL';
   h+=`<p class="mk-note">価格は ${E(MK.asof||'')} 時点で自動取得（投信は基準価額、その他はYahoo Finance終値）。ニュースと解説はClaudeが調べて作成。売買の推奨ではありません。</p>`;
   const ul=[...used].sort((a,b)=>a-b);
-  h=h.replace('\u0000GL',ul.length?`<details class="mk-gl" open><summary>この号の用語（${ul.length}）</summary><dl>${ul.map(i=>{const g=GL[i];return `<dt>${E(g.term)}${g.alias?`<i>${E(g.alias)}</i>`:''}</dt><dd>${E(g.desc)}</dd>`}).join('')}</dl></details>`:'');
+  if(ul.length)fl+=fold(`この号の用語（${ul.length}）`,`<dl>${ul.map(i=>{const g=GL[i];return `<dt>${E(g.term)}${g.alias?`<i>${E(g.alias)}</i>`:''}</dt><dd>${E(g.desc)}</dd>`}).join('')}</dl>`);
+  h=h.replace('\u0000FL',()=>`<div class="mk-foldwrap">${fl}</div>`);
   root.innerHTML=h;window.__mkGL=GL;
   const s=root.querySelector('#mk-sel');if(s)s.onchange=renderMarket;
 }

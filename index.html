@@ -245,6 +245,27 @@ details.mk-fold dd{margin:2px 0 0;font-size:13px;color:var(--ink2)}
 .subh{font-size:13px;font-weight:700;letter-spacing:.06em;margin:28px 0 4px}
 #t-perf-m thead th{position:sticky;top:0;background:var(--bg)}
 @media (max-width:600px){#t-perf-m th:nth-child(3),#t-perf-m td:nth-child(3){display:none}#t-perf-y th,#t-perf-y td,#t-perf-m th,#t-perf-m td{padding-right:6px}}
+/* ---- life simulator ---- */
+#s-life .lfg{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px 28px;margin-top:6px}
+#s-life .lfg>*{min-width:0}
+#s-life .lfh{grid-column:1/-1;font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--ink2);margin:14px 0 0;padding-bottom:4px;border-bottom:1px solid var(--line)}
+#s-life .lf{display:flex;flex-direction:column;gap:4px;min-width:0}
+#s-life .lf .lt{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:12px;color:var(--ink2)}
+#s-life .lf .lt b{font-family:Manrope,"Noto Sans JP",sans-serif;font-weight:800;font-size:14px;color:var(--ink);white-space:nowrap}
+#s-life .lf input[type=range]{width:100%;accent-color:var(--ink);border:0;padding:0;margin:4px 0}
+#s-life .lf input[type=number],#s-life .lf select{width:100%;box-sizing:border-box;font-size:15px}
+#s-life .lf .hint{font-size:11px;color:var(--ink3);line-height:1.5}
+#s-life .lf.chk{flex-direction:row;align-items:center;gap:8px;font-size:13px;color:var(--ink)}
+#s-life .lf.chk input{accent-color:var(--ink)}
+#s-life .lfb{display:flex;flex-wrap:wrap;gap:8px}
+#s-life .lfb button{background:none;border:1.5px solid var(--line2);border-radius:999px;color:var(--ink);font:inherit;font-size:12px;padding:5px 12px;cursor:pointer}
+#s-life .lfb button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+#s-life .lfb button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+#life-verdict{margin:0 0 6px;font-size:15px;font-weight:500;line-height:1.6}
+#s-life details.how{border-top:1px solid var(--line);margin-top:24px;padding-top:8px}
+#s-life details.how summary{font-size:12px;color:var(--ink3);cursor:pointer}
+#s-life details.how ul{margin:8px 0 0;padding-left:18px;font-size:12px;color:var(--ink2);line-height:1.8}
+#s-life .fig .s small{display:block;color:var(--ink3);font-size:11px}
 
 #lock{position:fixed;inset:0;z-index:50;background:#0f0f0f;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;padding-top:calc(24px + env(safe-area-inset-top,0px))}
 #lock[hidden]{display:none!important}
@@ -317,6 +338,27 @@ details.mk-fold dd{margin:2px 0 0;font-size:13px;color:var(--ink2)}
 
   <section id="p-assets" class="panel">
     <div class="figs" id="figs-assets"></div>
+    <section class="block" id="s-life"><h2 data-ic="flow">人生のお金シミュレーター</h2><p class="note">今の資産と収入から、95歳までお金がもつ「毎月の生活費」を逆算します。金額はすべて今のお金の価値（物価上昇を引いた実質）。ざっくりした目安です</p>
+      <div class="figs" id="figs-life" style="margin-top:8px"></div>
+      <p id="life-verdict"></p><p class="note" id="life-warn"></p>
+      <div id="c-life" class="chart tall"></div><div class="legend" id="lg-life"></div>
+      <h3 class="subh">節目の資産（標準）</h3><div class="tablewrap" style="max-height:none"><table id="t-life"></table></div>
+      <h3 class="subh">条件を変える</h3><div id="life-ctl"></div>
+      <details class="how"><summary>計算の前提</summary><ul>
+        <li>金額はすべて「今のお金の価値」で計算（実質）。運用利回りから物価上昇率を引いた値で増やします。物価上昇率の初期値は2%</li>
+        <li>利回りは名目で 悲観3%・標準5%・楽観7%。実質はそれぞれ物価上昇率を引いた値。大きな数字は標準で計算</li>
+        <li>1年ごとに計算: 資産 × (1 + 実質利回り) + 手取り収入 − 生活費 − 教育費 − 住宅の増減 + 年金。余ったお金は同じ利回りで運用し続ける前提</li>
+        <li>NISAが中心なので、取り崩しの税金は考えていません</li>
+        <li>生活費は「現役の月額」を逆算。引退後は現役の生活費 × 老後の割合。教育費と住宅の増減は生活費とは別に上乗せ</li>
+        <li>教育費は文部科学省「子供の学習費調査」等をもとにした目安。子どもは2022年と2025年生まれ。小学(6-11歳) 公立35万・私立167万、中学(12-14歳) 公立54万・私立144万、高校(15-17歳) 公立51万・私立105万、大学(18-21歳) 公立70万・私立130万（いずれも年額）。「高校から私立」は中学まで公立、高校と大学が私立</li>
+        <li>住宅は、購入年に頭金と諸費用を資産から払い、残りを元利均等返済のローンで借りる計算。月々の返済額は名目で固定なので、毎年「(1 + 物価上昇率)の年数乗」で割って今の価値に直します。固定資産税等は年15万円。今の家賃は生活費に含まれているので、購入後はその分を差し引きます。返済が終わると、固定資産税等 − 家賃だけが残ります</li>
+        <li>年金は65歳から。実質で一定として扱い、物価に合わせて増える前提です。国民年金を60歳まで納めると1人最大 月約7万円（加入期間で変わる）</li>
+        <li>収入ショックは、開始年齢から引退までの手取り年収に反映。無収入の年数のあとは、手取り年収の指定割合で働き続ける想定</li>
+        <li>暴落は、引退する年の初めに資産が40%減る想定</li>
+        <li>今の生活費は、今年の月平均（記録がそろった月）から育児・教育を除いた額。「今のペースのまま」は、引退まで今の生活費を使い、引退後は割合を掛けた額</li>
+        <li>生活費を逆算するときは95歳の資産だけを目標にしているので、途中で資産がマイナスになる場合は注意書きを出します。将来の保証ではなく、考え方を整理するための目安です</li>
+      </ul></details>
+    </section>
     <section class="block" id="s-perf" hidden><h2 data-ic="invest">投資の成績（口座開設から）</h2><p class="note" id="n-perf"></p><div class="figs" id="figs-perf" style="margin-top:16px"></div><div id="c-perf" class="chart tall"></div><div class="legend" id="lg-perf"></div>
       <h3 class="subh">年ごとの成績</h3><div class="tablewrap" style="max-height:none"><table id="t-perf-y"></table></div>
       <h3 class="subh">月ごとの成績</h3><div class="tablewrap" style="max-height:420px"><table id="t-perf-m"></table></div></section>
@@ -632,6 +674,179 @@ function renderIncome(){
   el('lg-salary').innerHTML=SAL.map(([ks,n],i)=>`<span><i style="--sw:${[css('--ink'),css('--f2'),css('--f3')][i]}"></i>${n}</span>`).join('');
 }
 
+/*LIFE-CALC-START*/
+const LIFE_KEY='kakei_life_v1',LIFE_END=95,LIFE_TAX=150000,LIFE_KIDS=[2022,2025],LIFE_NOM=[3,5,7];
+const LIFE_EDU={pub:[350000,540000,510000,700000],pri:[1670000,1440000,1050000,1300000]};
+function lifeAge(now){const b=[1987,5,21];let a=now.getFullYear()-b[0];if(now.getMonth()+1<b[1]||(now.getMonth()+1===b[1]&&now.getDate()<b[2]))a--;return a}
+function lifeDef(assets){return {assets:assets,income:10000000,retire:60,pension:50000,infl:2,ratio:70,edu:'pub',house:true,buyYear:2030,price:40000000,down:4000000,fees:3000000,loanRate:2,loanYears:35,rent:50000,left:0,shockAge:45,shockYrs:0,shockPct:100,crash:false}}
+function lifeEdu(plan,kidAge){const s=kidAge>=6&&kidAge<=11?0:kidAge>=12&&kidAge<=14?1:kidAge>=15&&kidAge<=17?2:kidAge>=18&&kidAge<=21?3:-1;if(s<0)return 0;const pri=plan==='pri'||(plan==='mix'&&s>=2);return (pri?LIFE_EDU.pri:LIFE_EDU.pub)[s]}
+function lifePmt(L){const P=L.price-L.down;if(!L.house||P<=0)return 0;const r=L.loanRate/100/12,n=L.loanYears*12;return r===0?P/n:P*r/(1-Math.pow(1+r,-n))}
+function lifeShockOn(L){return L.shockAge<L.retire&&(L.shockYrs>0||L.shockPct<100)}
+function lifeIncome(L,age){if(age>=L.retire)return 0;if(lifeShockOn(L)&&age>=L.shockAge)return age<L.shockAge+L.shockYrs?0:L.income*L.shockPct/100;return L.income}
+function lifeSim(L,ctx,S,rr){
+  const pts=[],infl=L.infl/100,pmtY=lifePmt(L)*12,ratio=L.ratio/100;let a=L.assets;
+  for(let age=ctx.age0;age<=LIFE_END;age++){
+    const year=ctx.year0+age-ctx.age0;
+    if(L.crash&&age===L.retire&&a>0)a*=0.6;
+    pts.push(a);if(age===LIFE_END)break;
+    let flow=lifeIncome(L,age)-(age<L.retire?S:S*ratio)*12;
+    flow-=LIFE_KIDS.reduce((s,y)=>s+lifeEdu(L.edu,year-y),0);
+    if(L.house&&year>=L.buyYear){
+      if(year===L.buyYear)flow-=L.down+L.fees;
+      const loan=year<L.buyYear+L.loanYears?pmtY/Math.pow(1+infl,year-ctx.year0):0;
+      flow-=loan+LIFE_TAX-L.rent*12;
+    }
+    if(age>=65)flow+=L.pension*12;
+    a=a*(1+rr)+flow;
+  }
+  return pts;
+}
+function lifeSolve(L,ctx,rr){
+  const f=S=>{const p=lifeSim(L,ctx,S,rr);return p[p.length-1]-L.left};
+  if(f(0)<0)return 0;let lo=0,hi=20000000;for(let i=0;i<90;i++){const m=(lo+hi)/2;if(f(m)>=0)lo=m;else hi=m}return lo;
+}
+function lifeNeg(pts,age0){const idx=[];pts.forEach((v,i)=>{if(v<-0.5)idx.push(i)});return idx.length?{from:age0+idx[0],to:age0+idx[idx.length-1]}:null}
+function lifeCurSpend(D,isDone,year0){
+  const ms=D.months.filter(m=>m.slice(0,4)===String(year0));let use=ms.filter(isDone);if(!use.length)use=ms.length?ms:D.months.slice(-1);
+  return use.reduce((s,m)=>s+D.expense[m].total_jpy-((D.expense[m].by_category||{})['육아·교육']||0),0)/use.length;
+}
+function lifeRun(L,ctx){
+  const rates=LIFE_NOM.map(n=>(n-L.infl)/100),S=rates.map(r=>lifeSolve(L,ctx,r)),ratio=L.ratio/100;
+  const lines=rates.map((r,i)=>lifeSim(L,ctx,S[1],r)),pace=lifeSim(L,ctx,ctx.cur,rates[1]);
+  const mo=s=>({work:s,mid:s*ratio,late:s*ratio,pen:Math.min(L.pension,s*ratio),draw:Math.max(0,s*ratio-L.pension)});
+  const ev=[],add=(age,name)=>{if(age>=ctx.age0&&age<=LIFE_END)ev.push({age,name})};
+  if(L.house)add(ctx.age0+L.buyYear-ctx.year0,'住宅購入');
+  LIFE_KIDS.forEach((y,i)=>add(ctx.age0+y+18-ctx.year0,(i?'下':'上')+'の子 大学入学'));
+  add(L.retire,'引退');if(L.crash)add(L.retire,'暴落');add(65,'年金開始');if(lifeShockOn(L))add(L.shockAge,'収入ショック開始');
+  const g={};ev.forEach(e=>{(g[e.age]=g[e.age]||[]).push(e.name)});
+  const events=Object.keys(g).map(Number).sort((a,b)=>a-b).map(age=>({age,year:ctx.year0+age-ctx.age0,name:g[age].join('・'),assets:lines[1][age-ctx.age0]}));
+  return {S,rates,lines,pace,mo:S.map(mo),events,neg:lifeNeg(lines[1],ctx.age0),paceNeg:lifeNeg(pace,ctx.age0),end:lines[1][lines[1].length-1]};
+}
+/*LIFE-CALC-END*/
+let LIFE=null,LIFE_CTX=null,LIFE_DEFAULT=null;
+function lifeInit(){
+  const dms=Object.keys(D.assets||{}).sort(),am=dms[dms.length-1];
+  const now=new Date(),done=D.months.filter(complete);
+  LIFE_CTX={age0:lifeAge(now),year0:now.getFullYear(),cur:lifeCurSpend(D,complete,now.getFullYear()),assets0:am?D.assets[am].total_jpy:0};
+  LIFE_DEFAULT=lifeDef(null);LIFE=Object.assign({},LIFE_DEFAULT);LIFE.buyYear=Math.max(2030,LIFE_CTX.year0);LIFE_DEFAULT.buyYear=LIFE.buyYear;
+  try{const s=JSON.parse(localStorage.getItem(LIFE_KEY)||'null');if(s)Object.keys(LIFE_DEFAULT).forEach(k=>{if(s[k]!==undefined&&typeof s[k]===typeof LIFE_DEFAULT[k])LIFE[k]=s[k];else if(k==='assets'&&typeof s[k]==='number')LIFE[k]=s[k]})}catch(e){}
+  lifeClamp();
+  const rng=(k,l,mn,mx,st,sc,u,note)=>`<label class="lf"><span class="lt">${l}<b id="lv-${k}"></b></span><input type="range" data-k="${k}" data-sc="${sc}" min="${mn}" max="${mx}" step="${st}">${note?`<span class="hint">${note}</span>`:''}</label>`;
+  const sel=(k,l,opts)=>`<label class="lf"><span class="lt">${l}</span><select data-k="${k}">${opts.map(([v,t])=>`<option value="${v}">${t}</option>`).join('')}</select></label>`;
+  const chk=(k,l)=>`<label class="lf chk"><input type="checkbox" data-k="${k}">${l}</label>`;
+  el('life-ctl').innerHTML=`<div class="lfg">
+    <div class="lfh">お金と収入</div>
+    <label class="lf"><span class="lt">現在の資産（万円）</span><input type="number" data-k="assets" data-sc="10000" min="0" step="100" inputmode="numeric"><span class="hint">初期値は最新の資産記録の合計</span></label>
+    ${rng('income','手取り年収（税・保険を払った後）',0,1600,10,10000)}
+    <div class="lf"><span class="lt">引退年齢<b id="lv-retire"></b></span><input type="range" data-k="retire" data-sc="1" min="50" max="65" step="1"><div class="lfb"><button type="button" data-act="ret55">55歳で引退</button></div></div>
+    ${rng('pension','年金（夫婦合計・月額、65歳から）',0,20,0.5,10000,'','国民年金を60歳まで納めると1人最大 月約7万円（加入期間で変わる）。ねんきん定期便の金額がわかれば入力してください')}
+    <div class="lfh">運用と老後</div>
+    ${rng('infl','物価上昇率',0,5,0.1,1)}
+    ${rng('ratio','老後の生活費の割合（現役の生活費に対して）',50,100,5,1)}
+    ${sel('left','95歳で残すお金',[['0','0円'],['10000000','1,000万円']])}
+    ${chk('crash','引退直前に−40%の暴落')}
+    <div class="lfh">教育と住宅</div>
+    ${sel('edu','教育（子ども2人）',[['pub','すべて公立'],['mix','高校から私立'],['pri','すべて私立']])}
+    ${chk('house','家を買う')}
+    <div id="life-house" class="lfg" style="grid-column:1/-1">
+      ${rng('buyYear','購入年',LIFE_CTX.year0,LIFE_CTX.year0+20,1,1)}
+      ${rng('price','価格',1000,10000,100,10000)}
+      ${rng('down','頭金',0,3000,50,10000)}
+      ${rng('fees','諸費用（購入年に資産から支払い）',0,1000,10,10000)}
+      ${rng('loanRate','ローン金利',0,5,0.1,1)}
+      ${rng('loanYears','返済期間',10,40,1,1)}
+      ${rng('rent','今の家賃（月額）',0,30,0.5,10000,'','今の生活費にすでに入っている分。購入後は差し引きます')}
+    </div>
+    <div class="lfh">もしもの時（収入ショック）</div>
+    <div class="lf" style="grid-column:1/-1"><div class="lfb">
+      <button type="button" data-act="sh0">なし</button><button type="button" data-act="sh1">収入30%減</button><button type="button" data-act="sh2">CMKRがなくなる（Ople分のみ 年280万）</button><button type="button" data-act="sh3">1年無収入→70%で再就職</button></div></div>
+    ${rng('shockAge','開始年齢',LIFE_CTX.age0,65,1,1,'','開始年齢から引退年齢まで反映')}
+    ${rng('shockYrs','無収入の年数',0,5,1,1)}
+    ${rng('shockPct','その後の収入（手取り年収に対して）',0,100,5,1)}
+    <div class="lf" style="grid-column:1/-1"><div class="lfb"><button type="button" data-act="reset">初期値に戻す</button></div></div>
+  </div>`;
+  const c=el('life-ctl');
+  c.addEventListener('input',lifeOnInput);c.addEventListener('change',lifeOnInput);
+  c.addEventListener('click',e=>{const b=e.target.closest('button[data-act]');if(!b)return;const a=b.dataset.act;
+    if(a==='ret55')LIFE.retire=55;
+    else if(a==='reset'){LIFE=Object.assign({},LIFE_DEFAULT)}
+    else{const P={sh0:[0,100],sh1:[0,70],sh2:[0,28],sh3:[1,70]}[a];LIFE.shockYrs=P[0];LIFE.shockPct=P[1]}
+    lifeUpdate()});
+  lifeSync();
+}
+function lifeClamp(){
+  LIFE.shockAge=Math.min(Math.max(LIFE.shockAge,LIFE_CTX.age0),Math.max(LIFE.retire,LIFE_CTX.age0));
+  LIFE.buyYear=Math.min(Math.max(LIFE.buyYear,LIFE_CTX.year0),LIFE_CTX.year0+20);
+}
+function lifeOnInput(e){
+  const t=e.target,k=t.dataset&&t.dataset.k;if(!k)return;
+  if(t.type==='checkbox')LIFE[k]=t.checked;
+  else if(t.tagName==='SELECT')LIFE[k]=typeof LIFE_DEFAULT[k]==='number'?Number(t.value):t.value;
+  else{if(t.value==='')return;const v=Number(t.value);if(isNaN(v))return;LIFE[k]=Math.round(v*Number(t.dataset.sc)*1000)/1000}
+  lifeUpdate();
+}
+function lifeFmt(k,v){
+  const n=x=>x.toLocaleString(undefined,{maximumFractionDigits:1});
+  if(['retire','shockAge'].includes(k))return v+'歳';if(k==='buyYear')return v+'年';if(k==='loanYears'||k==='shockYrs')return v+'年';
+  if(['infl','ratio','loanRate','shockPct'].includes(k))return n(v)+'%';
+  if(k==='pension'||k==='rent')return '月'+n(v/10000)+'万円';return n(v/10000)+'万円';
+}
+function lifeSync(){
+  const c=el('life-ctl'),act=document.activeElement;
+  c.querySelectorAll('[data-k]').forEach(i=>{
+    const k=i.dataset.k;let v=LIFE[k];if(k==='assets'&&v==null)v=LIFE_CTX.assets0;
+    if(i.type==='checkbox')i.checked=!!v;
+    else if(i.tagName==='SELECT')i.value=String(v);
+    else if(i!==act){
+      if(k==='shockAge'){i.max=LIFE.retire}
+      i.value=i.type==='number'?Math.round(v/Number(i.dataset.sc)):Math.round(v/Number(i.dataset.sc)*100)/100;
+    }
+    const lv=el('lv-'+k);if(lv)lv.textContent=lifeFmt(k,v);
+  });
+  el('life-house').hidden=!LIFE.house;
+  const sp=[[0,100],[0,70],[0,28],[1,70]];
+  c.querySelectorAll('button[data-act^=sh]').forEach((b,i)=>b.classList.toggle('on',LIFE.shockYrs===sp[i][0]&&LIFE.shockPct===sp[i][1]));
+  c.querySelector('button[data-act=ret55]').classList.toggle('on',LIFE.retire===55);
+}
+function lifeUpdate(){
+  lifeClamp();
+  try{localStorage.setItem(LIFE_KEY,JSON.stringify(LIFE))}catch(e){}
+  lifeSync();lifeRender();
+}
+function renderLife(){
+  if(!el('life-ctl').firstChild)lifeInit();
+  lifeRender();
+}
+function lifeRender(){
+  const L=Object.assign({},LIFE);if(L.assets==null)L.assets=LIFE_CTX.assets0;
+  const ctx=LIFE_CTX,R=lifeRun(L,ctx),F=FILLS();
+  const mo=v=>'月'+man(v)+'円',s=R.mo[1],p=R.mo[0];
+  const hasMid=L.retire<65;
+  el('figs-life').innerHTML=fig(`現役（〜${L.retire}歳）`,mo(s.work),`<small>悲観 ${mo(p.work)}</small>`,'','net')
+    +fig(`${L.retire}〜64歳`,hasMid?mo(s.mid):'なし',hasMid?`資産から<small>悲観 ${mo(p.mid)}</small>`:'引退が65歳のため','','asset')
+    +fig('65歳〜',mo(s.late),`年金${man(s.pen)}円＋資産から${man(s.draw)}円<small>悲観 ${mo(p.late)}（年金${man(p.pen)}円＋資産から${man(p.draw)}円）</small>`,'','invest');
+  const d=R.S[1]-ctx.cur;
+  el('life-verdict').innerHTML=R.S[1]<=0?'今の条件では、95歳まで資産がもちません。条件を見直してください'
+    :`今の生活費（教育費を除く）月${man(ctx.cur)}円に対して、${d>=0?`今より月${man(d)}円 多く使えます`:`今より月${man(-d)}円 少なくする必要があります`}`;
+  const w=[];
+  if(R.neg)w.push(`途中で資産がマイナスになる期間があります（${R.neg.from}歳〜${R.neg.to}歳）`);
+  w.push(R.paceNeg?`今のペース（月${man(ctx.cur)}円）のままだと、${R.paceNeg.from}歳で資産がマイナスになります`:`今のペース（月${man(ctx.cur)}円）のままでも、95歳まで資産は残ります（95歳で${man(R.pace[R.pace.length-1])}円）`);
+  el('life-warn').innerHTML=w.join('<br>');
+  const ages=R.lines[0].map((_,i)=>String(ctx.age0+i));
+  const cols=[css('--f3'),css('--ink'),css('--f2')],names=['悲観 3%','標準 5%','楽観 7%'];
+  const ml={symbol:'none',silent:true,lineStyle:{color:css('--ink3'),type:'dotted',width:1},label:{show:true,color:css('--ink2'),fontFamily:font,fontSize:10,rotate:90,position:'insideEndTop',formatter:p=>p.name},data:R.events.map(e=>({name:e.name,xAxis:String(e.age)}))};
+  const ser=R.lines.map((v,i)=>({name:names[i],type:'line',data:v,symbol:'none',itemStyle:{color:cols[i]},lineStyle:{width:i===1?2.5:1.5,color:cols[i]},z:i===1?4:3,markLine:i===1?ml:undefined}))
+    .concat([{name:'今のペースのまま',type:'line',data:R.pace,symbol:'none',itemStyle:{color:css('--ink2')},lineStyle:{width:1.5,type:'dashed',color:css('--ink2')},z:2}]);
+  chart('c-life',{...base(),tooltip:{...base().tooltip,formatter:ps=>`<b>${ps[0].axisValue}歳（${ctx.year0+Number(ps[0].axisValue)-ctx.age0}年）</b>`+ps.map(q=>`<div style="display:flex;justify-content:space-between;gap:16px"><span>${q.marker}${q.seriesName}</span><b>${yn(q.value)}</b></div>`).join('')},
+    grid:{left:52,right:16,top:24,bottom:28},
+    xAxis:{type:'category',data:ages,boundaryGap:false,axisLine:{lineStyle:{color:css('--line2')}},axisTick:{show:false},axisLabel:{color:css('--ink2'),fontFamily:font,interval:(i,v)=>Number(v)%(window.innerWidth<640?10:5)===0,formatter:v=>v+'歳'}},
+    yAxis:yval(v=>Math.round(v/10000).toLocaleString()),series:ser});
+  el('lg-life').innerHTML=names.map((n,i)=>`<span><i style="--sw:${cols[i]}"></i>${n}</span>`).join('')+`<span><i class="dash" style="border-top-color:var(--ink2)"></i>今のペースのまま</span><span style="color:var(--ink3)">縦軸は万円</span>`;
+  el('t-life').innerHTML='<thead><tr><th>年齢</th><th>年</th><th>できごと</th><th class="n">資産（標準）</th></tr></thead>'
+    +[{age:ctx.age0,year:ctx.year0,name:'現在',assets:R.lines[1][0]},...R.events.filter(e=>e.age>ctx.age0),{age:LIFE_END,year:ctx.year0+LIFE_END-ctx.age0,name:'目標の年齢',assets:R.end}]
+      .map(e=>`<tr><td>${e.age}歳</td><td>${e.year}年</td><td style="white-space:normal">${e.name}</td><td class="n">${yn(e.assets)}</td></tr>`).join('');
+}
+
 function renderPerf(){
   const P=D.perf,sec=el('s-perf');sec.hidden=!P;if(!P)return;
   const F=FILLS(),t=P.total;
@@ -666,6 +881,7 @@ function renderPerf(){
     +ms.slice().reverse().map(m=>`<tr><td>${m.month.slice(0,4)}年${parseInt(m.month.slice(5))}月</td><td class="n">${nv(m.net_in)}</td><td class="n">${yen(m.value)}</td><td class="n">${sg(m.gain)}</td><td class="n">${pc(m.ret)}</td></tr>`).join('');
 }
 function renderAssets(){
+  renderLife();
   renderPerf();
   const F=FILLS(),T=D.asset_trend||{},tms=D.months.filter(m=>T[m]);
   const pct=x=>`<span style="margin-left:8px;font-size:.85em">${sg(x,'pct')}</span>`;

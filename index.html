@@ -246,7 +246,7 @@ details.mk-fold dd{margin:2px 0 0;font-size:13px;color:var(--ink2)}
 #t-perf-m thead th{position:sticky;top:0;background:var(--bg)}
 @media (max-width:600px){#t-perf-m th:nth-child(3),#t-perf-m td:nth-child(3){display:none}#t-perf-y th,#t-perf-y td,#t-perf-m th,#t-perf-m td{padding-right:6px}}
 /* ---- life simulator ---- */
-#figs-life{grid-template-columns:1.5fr 1fr 1fr;gap:0 16px;margin-block:8px 16px}
+#figs-life{grid-template-columns:1fr;gap:0 16px;margin-block:8px 16px}
 #figs-life .fig .l{letter-spacing:.04em}
 #figs-life .fig.main .v{font-size:30px}
 #figs-life .fig:not(.main) .v{font-size:20px;color:var(--ink2);white-space:normal}
@@ -345,6 +345,7 @@ details.mk-fold dd{margin:2px 0 0;font-size:13px;color:var(--ink2)}
       <div class="figs" id="figs-life"></div>
       <p class="lfsub" id="life-sum"></p>
       <div class="tablewrap" style="max-height:none"><table id="t-life"></table></div>
+      <p class="note" style="margin-top:8px">毎月の資産記録を更新すると、この予測も自動で最新の保有に合わせて計算し直します</p>
       <div id="c-life" class="chart tall"></div><div class="legend" id="lg-life"></div>
       <h3 class="subh">条件を変える</h3><div id="life-ctl"></div>
       <details class="how"><summary>計算の前提</summary><div id="life-how"></div></details>
@@ -665,41 +666,60 @@ function renderIncome(){
 }
 
 /*LIFE-CALC-START*/
-const LIFE_KEY='kakei_life_v3';
-const LIFE_RET={pess:{s:4,f:3,x:0,c:-5},base:{s:7,f:9,x:8,c:5},opt:{s:10,f:14,x:15,c:15}};
-const LIFE_BK=[['s','S&P500'],['f','FANG+'],['x','SpaceX'],['c','暗号資産'],['o','その他']];
-const LIFE_SC=[['pess','悲観'],['base','標準'],['opt','楽観']];
+const LIFE_KEY='kakei_life_v4';
+/* ===== 想定利回り（年・名目、%）。保有が変わったらここだけ直す =====
+   判定は上から順。最初に当たった区分に入る。どれにも当たらない銘柄は
+   銘柄名（証券会社名を除く）ごとに1行になり、利回りは other を使う */
+const LIFE_RET={
+  rules:[
+    {id:'s',name:'S&P500',re:/S&P\s*500/i,r:7},
+    {id:'f',name:'FANG+',re:/FANG/i,r:9},
+    {id:'x',name:'SpaceX',re:/SpaceX/i,r:8},
+    {id:'botz',name:'BOTZ',re:/BOTZ/i,r:8},
+    {id:'fbt',name:'FBT',re:/(^|[^A-Za-z])FBT([^A-Za-z]|$)/i,r:7},
+    {id:'mrvl',name:'マーベル',re:/Marvell|MRVL|マーベル/i,r:9},
+    {id:'def',name:'防衛（466A）',re:/466A|防衛/,r:7},
+    {id:'c',name:'暗号資産',re:/^(BTC|ETH|XRP)/i,cls:'크립토',r:5}
+  ],
+  other:7
+};
 function lifeDef(){return {save:100000,infl:2}}
+const LIFE_BROKER=/^(楽天証券|SBI証券|SBI|マネックス証券|松井証券|auカブコム証券|moomoo証券)\s*/;
+function lifeRule(it){
+  const n=it.item||'';
+  return LIFE_RET.rules.find(x=>x.re.test(n)||(x.cls&&it.class===x.cls))||null;
+}
 function lifeGroup(items){
-  const h={s:{v:0,p:0},f:{v:0,p:0},x:{v:0,p:0},c:{v:0,p:0},o:{v:0,p:0}};
-  (items||[]).forEach(it=>{const n=it.item||'';let k='o';
-    if(/S&P500/.test(n))k='s';else if(/FANG/.test(n))k='f';else if(/SpaceX/.test(n))k='x';
-    else if(it.class==='크립토'||/^(BTC|ETH|XRP)/.test(n))k='c';
-    h[k].v+=it.value_jpy||0;h[k].p+=it.principal_jpy||0});
-  return h;
+  const m={},get=(id,name,r)=>m[id]||(m[id]={k:id,name,r,v:0,p:0});
+  LIFE_RET.rules.forEach(x=>{if(x.id==='s'||x.id==='f')get(x.id,x.name,x.r)});
+  (items||[]).forEach(it=>{
+    const n=it.item||'',ru=lifeRule(it);
+    const b=ru?get(ru.id,ru.name,ru.r):get('o:'+n,n.replace(LIFE_BROKER,'').trim()||n,LIFE_RET.other);
+    b.v+=it.value_jpy||0;b.p+=it.principal_jpy||0});
+  return Object.values(m).filter(b=>b.v>0||b.p>0||b.k==='s'||b.k==='f').sort((a,b)=>b.v-a.v);
 }
 function lifeMonths(ctx){return (ctx.endY-ctx.y0)*12+(ctx.endM-ctx.m0)}
 function lifeContrib(ctx,L,t){
   const mm=ctx.m0-1+t,y=ctx.y0+Math.floor(mm/12);
   return y<2027?{s:100000,f:100000}:{s:L.save,f:0};
 }
-function lifeSim(h,ctx,L,sc){
-  const n=lifeMonths(ctx),r=LIFE_RET[sc],bal={},rm={};
-  LIFE_BK.forEach(([k])=>{bal[k]=h[k].v;rm[k]=Math.pow(1+(k==='o'?r.s:r[k])/100,1/12)-1});
-  const snap=()=>LIFE_BK.map(([k])=>bal[k]),pts=[snap()],idx=[0];let added=0;
+function lifeSim(h,ctx,L){
+  const n=lifeMonths(ctx),bal={},rm={};
+  h.forEach(b=>{bal[b.k]=b.v;rm[b.k]=Math.pow(1+b.r/100,1/12)-1});
+  const snap=()=>h.map(b=>bal[b.k]),pts=[snap()],idx=[0];let added=0;
   for(let t=1;t<=n;t++){
-    LIFE_BK.forEach(([k])=>{bal[k]*=1+rm[k]});
-    const c=lifeContrib(ctx,L,t);Object.keys(c).forEach(k=>{bal[k]+=c[k];added+=c[k]});
+    h.forEach(b=>{bal[b.k]*=1+rm[b.k]});
+    const c=lifeContrib(ctx,L,t);Object.keys(c).forEach(k=>{if(k in bal){bal[k]+=c[k];added+=c[k]}});
     if((ctx.m0-1+t)%12===ctx.endM-1){pts.push(snap());idx.push(t)}
   }
   const last=pts[pts.length-1],total=last.reduce((a,b)=>a+b,0),years=n/12;
   return {pts,idx,last,total,real:total/Math.pow(1+L.infl/100,years),added,years};
 }
-function lifeRun(h,ctx,L){const o={};LIFE_SC.forEach(([k])=>o[k]=lifeSim(h,ctx,L,k));return o}
+function lifeRun(h,ctx,L){return lifeSim(h,ctx,L)}
 function lifeOku(v){
   const m=Math.round(v/10000),o=Math.floor(m/10000),r=m%10000;
   if(o>0)return o+'億'+(r?r.toLocaleString()+'万':'')+'円';
-  return m.toLocaleString()+'万円';
+  return m.toLocaleString()+'万円'
 }
 function lifeMan(v){return Math.round(v/10000).toLocaleString()+'万円'}
 /*LIFE-CALC-END*/
@@ -712,7 +732,7 @@ function lifeInit(){
   try{const s=JSON.parse(localStorage.getItem(LIFE_KEY)||'null');if(s)Object.keys(LIFE_DEFAULT).forEach(k=>{if(typeof s[k]==='number')LIFE[k]=s[k]})}catch(e){}
   lifeClamp();
   el('life-ctl').innerHTML=`<div class="lfg">
-    <div class="lf"><label class="lf"><span class="lt">毎月の積立（2027年から・S&amp;P500）<b id="lv-save"></b></span><input type="range" data-k="save" data-sc="10000" min="0" max="50" step="1"></label><div class="lfb"><button type="button" data-save="10">10万</button><button type="button" data-save="20">20万</button><button type="button" data-save="30">30万</button></div><span class="hint">マーベル・BOTZなど今後の買い増しは含みません</span></div>
+    <div class="lf"><label class="lf"><span class="lt">毎月の積立（2027年から・S&amp;P500）<b id="lv-save"></b></span><input type="range" data-k="save" data-sc="10000" min="0" max="50" step="1"></label><div class="lfb"><button type="button" data-save="10">10万</button><button type="button" data-save="20">20万</button><button type="button" data-save="30">30万</button></div><span class="hint">資産記録にない銘柄の買い増しは含みません</span></div>
     <label class="lf"><span class="lt">物価上昇率（「今のお金の価値」の計算用）<b id="lv-infl"></b></span><input type="range" data-k="infl" data-sc="1" min="0" max="5" step="0.1"></label>
     <div class="lf" style="grid-column:1/-1"><div class="lfb"><button type="button" data-act="reset">初期値に戻す</button></div></div>
   </div>`;
@@ -754,35 +774,31 @@ function renderLife(){
   lifeRender();
 }
 function lifeRender(){
-  const ctx=LIFE_CTX,h=LIFE_H,L=LIFE,R=lifeRun(h,ctx,L),B=R.base;
-  const keys=LIFE_BK.map(x=>x[0]).filter(k=>h[k].v>0||k!=='o');
-  const nowTot=keys.reduce((a,k)=>a+h[k].v,0),prin=keys.reduce((a,k)=>a+h[k].p,0);
-  const card=(k,main)=>{const r=R[k],nm=LIFE_SC.find(x=>x[0]===k)[1];
-    return `<div class="fig${main?' main':''}"><div class="l">${main?`60歳（2047年）の資産 ${nm}`:nm}</div><div class="v">${lifeOku(r.total)}</div><div class="s">今のお金の価値で約${lifeMan(r.real)}</div></div>`};
-  el('figs-life').innerHTML=card('base',true)+card('pess')+card('opt');
+  const ctx=LIFE_CTX,L=LIFE,B=lifeRun(LIFE_H,ctx,L);
+  const idx=LIFE_H.map((_,i)=>i).filter(i=>LIFE_H[i].v>0||B.last[i]>0.5);
+  const h=idx.map(i=>LIFE_H[i]),last=idx.map(i=>B.last[i]);
+  const nowTot=h.reduce((a,b)=>a+b.v,0),prin=h.reduce((a,b)=>a+b.p,0);
+  el('figs-life').innerHTML=`<div class="fig main"><div class="l">60歳（2047年）の資産</div><div class="v">${lifeOku(B.total)}</div><div class="s">今のお金の価値で約${lifeMan(B.real)}</div></div>`;
   const inv=prin+B.added;
   el('life-sum').textContent=`入れたお金 ${lifeMan(inv)}（今まで${lifeMan(prin)}＋これから${lifeMan(B.added)}） → 増えた分 ${lifeMan(B.total-inv)}`;
-  const names=Object.fromEntries(LIFE_BK),ret=k=>LIFE_RET.base[k==='o'?'s':k];
   const pc=(v,t)=>t>0?(v/t*100).toFixed(1)+'%':'-';
-  const rows=keys.map((k,i)=>`<tr><td>${names[k]}</td><td class="n">${lifeMan(h[k].v)}</td><td class="n">${pc(h[k].v,nowTot)}</td><td class="n">${ret(k)}%</td><td class="n">${lifeMan(B.last[LIFE_BK.findIndex(x=>x[0]===k)])}</td><td class="n">${pc(B.last[LIFE_BK.findIndex(x=>x[0]===k)],B.total)}</td></tr>`).join('');
-  el('t-life').innerHTML=`<thead><tr><th>区分</th><th class="n">今の評価額</th><th class="n">今の比率</th><th class="n">想定利回り（標準）</th><th class="n">60歳時点</th><th class="n">60歳時点の比率</th></tr></thead><tbody>${rows}<tr><td><b>合計</b></td><td class="n"><b>${lifeMan(nowTot)}</b></td><td class="n">100%</td><td class="n"></td><td class="n"><b>${lifeMan(B.total)}</b></td><td class="n">100%</td></tr></tbody>`;
-  const ages=B.pts.map((_,i)=>i===0?'今':String(ctx.age0+i)),cols=FILLS();
-  const ser=keys.map((k,j)=>{const bi=LIFE_BK.findIndex(x=>x[0]===k);return {name:names[k],type:'line',stack:'t',areaStyle:{opacity:1},data:B.pts.map(p=>p[bi]),symbol:'none',lineStyle:{width:0},itemStyle:{color:cols[j]},color:cols[j],z:1}});
-  const tot=r=>r.pts.map(p=>p.reduce((a,b)=>a+b,0));
-  const ln=(k,nm,color,dash)=>({name:nm,type:'line',data:tot(R[k]),symbol:'none',lineStyle:{width:1.8,color,type:dash},itemStyle:{color},z:5});
-  ser.push(ln('pess','悲観',css('--neg'),'dashed'),ln('opt','楽観',css('--pos'),'dashed'));
+  const rows=h.map((b,i)=>`<tr><td>${b.name}</td><td class="n">${lifeMan(b.v)}</td><td class="n">${pc(b.v,nowTot)}</td><td class="n">${b.r}%</td><td class="n">${lifeMan(last[i])}</td><td class="n">${pc(last[i],B.total)}</td></tr>`).join('');
+  el('t-life').innerHTML=`<thead><tr><th>区分</th><th class="n">今の評価額</th><th class="n">今の比率</th><th class="n">想定利回り</th><th class="n">60歳時点</th><th class="n">60歳時点の比率</th></tr></thead><tbody>${rows}<tr><td><b>合計</b></td><td class="n"><b>${lifeMan(nowTot)}</b></td><td class="n">100%</td><td class="n"></td><td class="n"><b>${lifeMan(B.total)}</b></td><td class="n">100%</td></tr></tbody>`;
+  const ages=B.pts.map((_,i)=>i===0?'今':String(ctx.age0+i)),fl=FILLS();
+  const cols=h.map((_,j)=>fl[j%fl.length]),op=h.map((_,j)=>j<fl.length?1:0.55);
+  const ser=h.map((b,j)=>({name:b.name,type:'line',stack:'t',areaStyle:{opacity:op[j]},data:B.pts.map(p=>p[idx[j]]),symbol:'none',lineStyle:{width:0},itemStyle:{color:cols[j]},color:cols[j],z:1}));
   chart('c-life',{...base(),tooltip:{...base().tooltip,formatter:ps=>{const a=ps[0].axisValue;return `<b>${a==='今'?'今':a+'歳（'+(ctx.endY-60+Number(a))+'年）'}</b>`+ps.map(q=>`<div style="display:flex;justify-content:space-between;gap:16px"><span>${q.marker}${q.seriesName}</span><b>${lifeMan(q.value)}</b></div>`).join('')}},
     grid:{left:52,right:16,top:16,bottom:28},
     xAxis:{type:'category',data:ages,boundaryGap:false,axisLine:{lineStyle:{color:css('--line2')}},axisTick:{show:false},axisLabel:{color:css('--ink2'),fontFamily:font,interval:(i,v)=>v==='今'||Number(v)%(window.innerWidth<640?10:5)===0||v==='60',formatter:v=>v==='今'?v:v+'歳'}},
     yAxis:yval(v=>Math.round(v/10000).toLocaleString()),series:ser});
-  el('lg-life').innerHTML=keys.map((k,j)=>`<span><i style="--sw:${cols[j]}"></i>${names[k]}（標準）</span>`).join('')+`<span><i style="--sw:${css('--neg')}"></i>悲観の合計</span><span><i style="--sw:${css('--pos')}"></i>楽観の合計</span><span style="color:var(--ink3)">縦軸は万円</span>`;
-  const rt=LIFE_RET,fm=(k)=>LIFE_SC.map(([s])=>(rt[s][k]<0?'−':'')+Math.abs(rt[s][k])+'%');
-  el('life-how').innerHTML=`<div class="tablewrap" style="max-height:none"><table><thead><tr><th>想定利回り（年・名目）</th><th class="n">悲観</th><th class="n">標準</th><th class="n">楽観</th></tr></thead><tbody>${[['s','S&P500（その他も同じ）'],['f','FANG+'],['x','SpaceX'],['c','暗号資産']].map(([k,n])=>`<tr><td>${n}</td>${fm(k).map(x=>`<td class="n">${x}</td>`).join('')}</tr>`).join('')}</tbody></table></div><ul>
+  el('lg-life').innerHTML=h.map((b,j)=>`<span><i style="--sw:${cols[j]};opacity:${op[j]}"></i>${b.name}</span>`).join('')+`<span style="color:var(--ink3)">縦軸は万円</span>`;
+  const ex=h.map(b=>`<tr><td>${b.name}</td><td class="n">${b.r}%</td></tr>`).join('');
+  el('life-how').innerHTML=`<div class="tablewrap" style="max-height:none"><table><thead><tr><th>想定利回り（年・名目）</th><th class="n">利回り</th></tr></thead><tbody>${ex}</tbody></table></div><ul>
     <li>積立: 2026年11月〜12月はS&amp;P500とFANG+に毎月10万円ずつ。2027年1月からはS&amp;P500のみ毎月${lifeMan(L.save)}（FANG+の積立は止める前提）。2047年5月まで続けます</li>
     <li>計算: 今の評価額から1か月ずつ、想定利回り（月複利）で増やし、毎月の積立を足していきます。区分ごとの配分は買い増し以外では変えません</li>
     <li>「今のお金の価値」は名目の金額を（1＋物価上昇率）の年数乗（約${(B.years).toFixed(1)}年、現在${L.infl}%）で割った値。将来の1万円は今より少ない物の量しか買えないので、その分を引いて見ています</li>
     <li>税金は考えていません（ほとんどがNISA。暗号資産は課税対象ですが、簡略化のため無視）</li>
-    <li>マーベル・BOTZなど今後の買い増し、収入・生活費・住宅・教育などは含みません。利回りは仮定であり、将来を保証するものではありません。ざっくりした目安です</li>
+    <li>資産記録にない銘柄の今後の買い増し、収入・生活費・住宅・教育などは含みません。利回りは仮定であり、将来を保証するものではありません。ざっくりした目安です</li>
   </ul>`;
 }
 

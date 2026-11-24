@@ -163,6 +163,8 @@ html,body{overflow-x:hidden}
 }
 #oneline{margin:0 0 22px;font-size:15px;font-weight:500;line-height:1.6;color:var(--band-ink)}
 #oneline b{font-family:Manrope,"Noto Sans JP","Noto Sans KR",sans-serif;font-weight:800}
+#fxline{margin:14px 0 0;font-size:12px;line-height:1.5;color:var(--band-ink);opacity:.62}
+@media (max-width:640px){#fxline{margin-top:12px;font-size:11px}}
 @media (max-width:640px){#oneline{font-size:13px;margin-bottom:16px}}
 .trip{border-bottom:1px solid var(--line);padding:12px 0;cursor:pointer}
 .trip .top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:baseline}
@@ -311,7 +313,7 @@ details.mk-fold dd{margin:2px 0 0;font-size:13px;color:var(--ink2)}
     <button data-p="stocks" data-i18n="tab_stocks">銘柄</button>
   </nav>
 </div></header>
-<div class="band"><div class="wrap"><p id="oneline"></p><div class="hero" id="hero"></div></div></div>
+<div class="band"><div class="wrap"><p id="oneline"></p><div class="hero" id="hero"></div><p id="fxline" hidden></p></div></div>
 <main><div class="wrap">
   <section id="p-summary" class="panel on">
     <div class="two"><section class="block" id="s-budget"><h2 data-ic="net" data-i18n="h_budget">今月の予算</h2><p class="note" data-i18n="n_budget">毎月決まって出るお金とNISAを払ったあと、自由に使えるお金</p><div id="budget"></div></section>
@@ -499,7 +501,7 @@ ym:(y,m)=>`${y}년 ${m}월`,mon:m=>`${m}월`,ymd:(y,m,d)=>`${y}년 ${m}월 ${d}�
 dot:' · ',upd:g=>`업데이트 ${g}`,monthly:'매월',pending:'(집계 중)',single:'한 달만',
 h_budget:'이번 달 예산',n_budget:'매달 나가는 돈과 NISA 적립을 빼고 자유롭게 쓸 수 있는 돈이에요',
 h_outlook:'내년 가계 예상',h_flow:'월별 흐름',
-n_flow:'수입, 지출, 투자 적립을 엔으로 보여줘요. 원화는 MOIN 실제 환율로 바꿨어요. 점선은 손에 남는 돈(수입 − 지출 − 투자)이에요. *가 붙은 달은 월급 입금 기록을 기다리는 중이에요',
+n_flow:'수입, 지출, 투자 적립을 원으로 보여줘요. 금액은 그 달 환율로 원으로 바꿨어요. 자산·투자는 최신 환율이에요. 점선은 손에 남는 돈(수입 − 지출 − 투자)이에요. *가 붙은 달은 월급 입금 기록을 기다리는 중이에요',
 h_catm:'이번 달 지출(금액순)',h_big:'이번 달 큰 지출',n_big:'한 건당 금액이 큰 순서예요',
 h_fixed:'매달 나가는 돈',n_fixed:'고정 항목과 2개월 넘게 계속 청구된 카드 결제(구독·통신·보험·할부)예요. 이번 달에 청구된 것만 보여줘요',
 h_diff:'지난달과 달라진 점',
@@ -513,20 +515,20 @@ h_life:'60세 때 자산 예상',n_life:'지금 보유 자산과 비중, 예상 
 n_life2:'매달 자산 기록을 업데이트하면 이 예상도 최신 보유 자산에 맞춰 다시 계산해요',
 h_cond:'조건 바꿔 보기',sm_how:'계산 기준',
 h_perf:'투자 성적(계좌 개설 후)',h_perfy:'연도별 성적',h_perfm:'월별 성적',
-h_atrend:'투자 자산 추이',n_atrend:'월말 평가액과 지금까지 넣은 원금(점선)이에요. 둘의 차이가 평가이익이에요. 원금은 보유 내역(평가손익)에서 매달 적립액을 거꾸로 계산한 추정값이에요',
+h_atrend:'투자 자산 추이',n_atrend:'월말 평가액과 지금까지 넣은 원금(점선)이에요. 둘의 차이가 평가이익이에요. 원금은 보유 내역(평가손익)에서 매달 적립액을 거꾸로 계산한 추정값이에요. 금액은 최신 환율로 원으로 바꿨어요',
 h_byitem:'종목별',h_ratio:'구성 비율',n_ratio:'인덱스·개별주·가상자산 비율이에요. 누르면 금액이 보여요',h_hold:'보유 내역',
 f_merch:'사용처',ph_search:'검색',f_cat:'카테고리',f_src:'결제 수단',f_all:'전체 기간',
 h_picks:'최종 후보',n_picks:'★ 1·2는 최종으로 고른 종목이에요',h_screen:'스크리닝 결과',
 f_status:'판정',f_market:'시장',f_moat:'독점도',f_dk:'독점·독주(과점 제외)',f_q:'종목명·티커',f_noai:'AI 관련 제외',
 st_pass:'통과',st_hold:'보류',st_drop:'탈락',moat_1:'독점',moat_2:'과점',moat_3:'독주',
 lg_budgetwait:'월급 입금 기록 대기 중',
-s_net:'수입 − 지출 − 투자 적립',s_inc:'월급·사업소득·아동수당',s_exp:'일본+한국, 엔으로 환산',s_invest:'NISA·가상자산',
+s_net:'수입 − 지출 − 투자 적립',s_inc:'월급·사업소득·아동수당',s_exp:'일본+한국, 원으로 환산',s_invest:'NISA·가상자산',
 h_invasset:'투자 자산',latestOf:m=>`${m} · 최신`,endOf:m=>`${m} 말`,
 budget:'예산',used:'쓴 돈',
 over:y=>`예산보다 <b>${y}</b> 더 썼어요`,left:y=>`<b>${y}</b> 더 쓸 수 있어요`,
 how_budget:'예산 계산 방법',how_inc:'수입(육아휴직 급여·일회성 지원금 제외)',how_fixed:'− 매달 나가는 돈',how_nisa:'− NISA 적립',how_eq:'= 예산',
 outlook:(a,b,i,f,v)=>`일회성 지원금을 뺀 수입으로 ${a}~${b}월처럼 지낼 때 매달 남는 돈이에요 (평균 수입 ${i} · 매달 나가는 돈 ${f} · 자유롭게 쓴 돈 ${v})`,
-o_nisa:'NISA 적립',o_th:'매달 남는 돈',o_keep:'지금처럼 20만',o_cut:'10만으로 줄이면',o_note:'플러스면 매달 저축이 늘고, 마이너스면 예금을 깎아 쓰는 속도예요',
+o_nisa:'NISA 적립',o_th:'매달 남는 돈',o_keep:'지금처럼 월 20만엔',o_cut:'월 10만엔으로 줄이면',o_note:'플러스면 매달 저축이 늘고, 마이너스면 예금을 깎아 쓰는 속도예요',
 catMore:n=>`기타 ${n}개 카테고리`,
 reimb:(r,t)=>`지출 합계 ${t} (정산·환급 ${r} 제외)`,
 nisaLabel:'NISA 적립(라쿠텐카드+미쓰비시UFJ카드)',noThisMonth:'이번 달 없음',
@@ -544,21 +546,21 @@ noCard:'카드 내역이 없어요',noUncl:'미분류가 없어요',
 tipDay:(m,d)=>`${m}월 ${d}일`,
 f_inc:'이번 달 수입',s_incwait:'월급 입금 대기 중',s_incall:'월급·사업소득·지원금',
 avgM:'월 평균',avgS:n=>`월급이 확인된 ${n}개월 평균`,ytd:'올해 누계',ytdR:(y,m)=>`${y}년 1월~${m}월`,
-krwPart:'이 중 원화 수입',krwConv:k=>`${k} 엔 환산`,
+krwPart:'이 중 원화 수입',krwConv:k=>'원화 그대로 받은 금액',
 g_side:'부업 수입(Ople·팀 J커브)',g_allow:'지원금·환급 등',
 sal_1:'월급(CMKR)',sal_2:'부업 수입(Ople, 6월까지 팀 J커브)',mk_bonus:'*상여 포함',mk_raise:'인상',
 life_main:'60세(2047년) 자산',life_real:v=>`지금 돈 가치로 약 ${v}`,
 life_sum:(a,b,c,d)=>`넣은 돈 ${a}(지금까지 ${b} + 앞으로 ${c}) → 늘어난 돈 ${d}`,
 lt_cls:'구분',lt_now:'지금 평가액',lt_nowp:'지금 비중',lt_ret:'예상 수익률',lt_60:'60세 때',lt_60p:'60세 때 비중',
-now:'지금',age:a=>`${a}세`,ageY:(a,y)=>`${a}세(${y}년)`,axisMan:'세로축은 만엔',
+now:'지금',age:a=>`${a}세`,ageY:(a,y)=>`${a}세(${y}년)`,axisMan:'세로축은 만원',
 how_th:'예상 수익률(연·명목)',how_ret:'수익률',
-how1:s=>`적립: 2026년 11~12월은 S&amp;P500과 FANG+에 매달 10만엔씩 넣어요. 2027년 1월부터는 S&amp;P500에만 매달 ${s}씩 넣어요(FANG+ 적립은 멈춘다고 가정). 2047년 5월까지 이어가요`,
+how1:(s,t)=>`적립: 2026년 11~12월은 S&amp;P500과 FANG+에 매달 ${t}씩 넣어요. 2027년 1월부터는 S&amp;P500에만 매달 ${s}씩 넣어요(FANG+ 적립은 멈춘다고 가정). 2047년 5월까지 이어가요`,
 how2:'계산: 지금 평가액에서 한 달씩 예상 수익률(월 복리)로 불리고, 매달 적립금을 더해요. 비중은 추가 매수 말고는 바꾸지 않아요',
-how3:(y,i)=>`\'지금 돈 가치\'는 명목 금액을 (1 + 물가 상승률)의 햇수 제곱(약 ${y}년, 현재 ${i}%)으로 나눈 값이에요. 앞으로의 1만엔은 지금보다 살 수 있는 게 적어서, 그만큼 빼고 봐요`,
+how3:(y,i)=>`\'지금 돈 가치\'는 명목 금액을 (1 + 물가 상승률)의 햇수 제곱(약 ${y}년, 현재 ${i}%)으로 나눈 값이에요. 앞으로의 1만원은 지금보다 살 수 있는 게 적어서, 그만큼 빼고 봐요`,
 how4:'세금은 넣지 않았어요(대부분 NISA예요. 가상자산은 과세 대상이지만 단순하게 보려고 뺐어요)',
-how5:'자산 기록에 없는 종목의 추가 매수, 수입·생활비·주택·교육비 등은 넣지 않았어요. 수익률은 가정이라 미래를 보장하지 않아요. 대략적인 참고용이에요',
-ctl_save:'매달 적립(2027년부터, S&amp;P500)',ctl_10:'10만',ctl_20:'20만',ctl_30:'30만',ctl_hint:'자산 기록에 없는 종목의 추가 매수는 넣지 않았어요',
-ctl_infl:'물가 상승률(\'지금 돈 가치\' 계산용)',ctl_reset:'처음 값으로 되돌리기',lvSave:v=>`월 ${v}만엔`,
+how5:'자산 기록에 없는 종목의 추가 매수, 수입·생활비·주택·교육비 등은 넣지 않았어요. 수익률은 가정이라 미래를 보장하지 않아요. 대략적인 참고용이에요. 금액은 최신 환율로 원으로 바꿔 보여줘요',
+ctl_save:'매달 적립(2027년부터, S&amp;P500)',ctl_10:'10만엔',ctl_20:'20만엔',ctl_30:'30만엔',ctl_hint:'자산 기록에 없는 종목의 추가 매수는 넣지 않았어요',
+ctl_infl:'물가 상승률(\'지금 돈 가치\' 계산용)',ctl_reset:'처음 값으로 되돌리기',lvSave:(v,w)=>`월 ${v}만엔(약 ${w}만원)`,
 perfNote:(a,b,acc,miss)=>`${a}부터 ${b}까지예요. 대상: ${acc}${miss?' ／ '+miss+'(아직 포함되지 않았어요)':''}`,
 p_in:'넣은 돈',p_inS:(a,b)=>`매수액 ${a} − 매도액 ${b}`,p_val:'지금 평가액',p_asof:d=>`${d} 기준`,p_gain:'늘어난 돈',p_cum:v=>`누적 ${v}`,p_irr:'연 수익률',p_irrS:'넣은 시기를 반영한 연평균',
 p_tot:'합계',p_pl:'손익',
@@ -577,6 +579,7 @@ mk_issue:'호',mk_issueDate:(y,m,d)=>`${y}년 ${m}월 ${d}일호`,mk_empty:'아�
 mk_foot:a=>`가격은 ${a} 기준으로 자동으로 가져왔어요(펀드는 기준가, 나머지는 Yahoo Finance 종가). 뉴스와 해설은 Claude가 조사해서 작성했어요. 매매를 추천하는 내용이 아니에요.`,
 mk_th_name:'종목',mk_th_price:'가격',mk_th_1d:'1일',mk_th_1w:'1주',mk_th_1m:'1개월',mk_th_ytd:'연초 이후',mk_th_date:'날짜',mk_th_what:'내용',mk_th_why:'왜 중요한가요',
 yenUnit:'엔',
+fxline:(w,mo,lt)=>`100엔 = ${w.toLocaleString()}원 · ${lt?'최신 ':''}${mo}월 환율`,
 lock_title:'박씨네 가계부',lock_hint:'비밀번호를 입력해 주세요',lock_ph:'비밀번호',lock_remember:'이 기기에서 기억하기',lock_open:'열기',lock_checking:'확인 중…',lock_wrong:'비밀번호가 맞지 않아요',lock_offline:'오프라인이라 아직 저장된 데이터가 없어요',lock_nodata:'데이터를 가져올 수 없어요',btn_refresh:'새로고침',btn_lock:'잠금',
 loadFail:'data.json을 불러오지 못했어요. serve.sh로 열어 주세요.'
 }
@@ -659,14 +662,50 @@ const jn=n=>KO()?(ITEM_KO[n]||koDisp(n)):(ITEM[n]||MERCH.reduce((a,[k,v])=>a.rep
 const dn=t=>t.source==='manual'?jn(t.name):(t.display?(KO()?koDisp(t.display):t.display):jn(t.name));
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const FILLS=()=>[css('--f1'),css('--f2'),css('--f3'),css('--f4'),css('--f5')];
-const yen=v=>(v<0?'−':'')+'¥'+Math.round(Math.abs(v)).toLocaleString();
-const man=v=>{const a=Math.abs(v)/10000;return (v<0?'−':'')+(a>=100?Math.round(a):Math.round(a*10)/10)+tt('man')};
+const yen=v=>(v<0?'−':'')+(KO()?'₩':'¥')+Math.round(Math.abs(v)).toLocaleString();
+const man=v=>{const a=Math.abs(v)/10000;
+  if(KO()){const z=v<0?'−':'';if(a>=10000)return z+(Math.round(a/1000)/10)+'억';if(a>=100)return z+Math.round(a).toLocaleString()+tt('man');return z+Math.round(a*10)/10+tt('man')}
+  return (v<0?'−':'')+(a>=100?Math.round(a):Math.round(a*10)/10)+tt('man')};
 const sg=(v,kind)=>{if(v==null||isNaN(v))return '';const a=Math.abs(v),r=kind==='pct'?Math.round(a*10)/10:Math.round(a);
   if(r===0)return `<span class="sz">±0${kind==='pct'?'%':''}</span>`;
-  const body=kind==='pct'?r.toFixed(1)+'%':kind==='num'?r.toLocaleString():'¥'+r.toLocaleString();
+  const body=kind==='pct'?r.toFixed(1)+'%':kind==='num'?r.toLocaleString():(KO()?'₩':'¥')+r.toLocaleString();
   return v>0?`<span class="sp">+${body}</span>`:`<span class="sn">−${body}</span>`};
 const yn=v=>v<0?sg(v):yen(v);
 const krw=v=>(v<0?'−':'')+'₩'+Math.round(Math.abs(v)).toLocaleString();
+/*KRW-START*/
+// ko mode: D is a KRW-converted copy of D0. Month-scoped data uses that month's D0.fx (JPY per 100 KRW),
+// asset/investment data (assets, asset_trend, asset_principal, perf, recurring) uses the latest month's rate.
+let D0=null,DKc=null;
+const ARATE=()=>D0.fx[D0.months[D0.months.length-1]];
+const TH=x=>KO()?x*100/D0.fx[endM()]:x;
+function toKRW(S){
+  const ms=S.months,fx=S.fx,ra=fx[ms[ms.length-1]];
+  const c=(v,r)=>typeof v==='number'?v*100/r:v;
+  const cm=(o,r)=>{if(!o)return o;const n={};Object.keys(o).forEach(k=>n[k]=c(o[k],r));return n};
+  const K={...S};K.income={};K.expense={};K.invest={};K.merchants={};K.unclassified={};
+  ms.forEach(m=>{const r=fx[m],i=S.income[m],bs={};let tot=0;
+    Object.entries(i.by_source).forEach(([k,v])=>{const j=(v.currency==='KRW'&&v.krw)?v.krw:c(v.jpy,r);bs[k]={...v,jpy:j};tot+=j});
+    K.income[m]={...i,by_source:bs,total_jpy:tot};
+    const x=S.expense[m];
+    K.expense[m]={...x,total_jpy:c(x.total_jpy,r),reimb_jpy:c(x.reimb_jpy,r),fixed_jpy:c(x.fixed_jpy,r),variable_jpy:c(x.variable_jpy,r),by_category:cm(x.by_category,r),by_method:cm(x.by_method,r),by_region:cm(x.by_region,r),by_source:cm(x.by_source,r)};
+    const v=S.invest[m];K.invest[m]={...v,total_jpy:c(v.total_jpy,r),items:(v.items||[]).map(it=>({...it,jpy:c(it.jpy,r)}))};
+    if(S.merchants[m])K.merchants[m]=S.merchants[m].map(it=>({...it,jpy:c(it.jpy,r)}));
+    if(S.unclassified[m])K.unclassified[m]=S.unclassified[m].map(it=>({...it,jpy:c(it.jpy,r)}));
+  });
+  K.assets={};Object.keys(S.assets||{}).filter(k=>k!=='__range').forEach(m=>{const a=S.assets[m];K.assets[m]={...a,total_jpy:c(a.total_jpy,ra),by_class:cm(a.by_class,ra),items:(a.items||[]).map(it=>({...it,value_jpy:c(it.value_jpy,ra),principal_jpy:c(it.principal_jpy,ra)}))}});
+  K.asset_trend={};Object.keys(S.asset_trend||{}).forEach(m=>{const t=S.asset_trend[m];K.asset_trend[m]={...t,total_jpy:c(t.total_jpy,ra),by_account:cm(t.by_account,ra)}});
+  K.asset_principal=cm(S.asset_principal,ra);
+  K.transactions=S.transactions.map(t=>({...t,jpy:(t.currency==='KRW'&&typeof t.amount==='number')?t.amount:c(t.jpy,fx[t.month])}));
+  K.recurring=(S.recurring||[]).map(r=>({...r,typical_jpy:c(r.typical_jpy,ra)}));
+  K.trips=(S.trips||[]).map(t=>{const rows=K.transactions.filter(x=>x.trip===t.name),bc={};rows.forEach(x=>bc[x.category]=(bc[x.category]||0)+x.jpy);
+    return {...t,total_jpy:rows.reduce((a,x)=>a+x.jpy,0),by_category:Object.fromEntries(Object.entries(bc).sort((a,b)=>b[1]-a[1]))}});
+  if(S.perf){const P=S.perf,T=P.total;
+    K.perf={...P,total:{...T,principal:c(T.principal,ra),value:c(T.value,ra),gain:c(T.gain,ra),invested_gross:c(T.invested_gross,ra),withdrawn:c(T.withdrawn,ra)},
+      months:P.months.map(x=>({...x,value:c(x.value,ra),net_in:c(x.net_in,ra),principal:c(x.principal,ra),gain:c(x.gain,ra),by_account:cm(x.by_account,ra),by_asset:cm(x.by_asset,ra)})),
+      years:P.years.map(y=>({...y,net_in:c(y.net_in,ra),end_value:c(y.end_value,ra)}))}}
+  return K;
+}
+/*KRW-END*/
 const mlabel=m=>m==='__range'?(tt('ym',R1.slice(0,4),parseInt(R1.slice(5)))+tt('sep')+(R2.slice(0,4)!==R1.slice(0,4)?tt('ym',R2.slice(0,4),parseInt(R2.slice(5))):tt('mon',parseInt(R2.slice(5))))):tt('ym',m.slice(0,4),parseInt(m.slice(5)));
 const mshort=m=>tt('mon',parseInt(m.slice(5)));
 const fd=d=>d.endsWith('--')?tt('monthly'):d.slice(5);
@@ -738,12 +777,16 @@ function setLang(l){
   if(l===LANG||(l!=='ja'&&l!=='ko'))return;
   LANG=l;try{localStorage.setItem(LANG_KEY,l)}catch(e){}
   applyStatic();
-  if(!D)return;
+  if(!D0)return;
+  D=KO()?(DKc||(DKc=toKRW(D0))):D0;
+  if(M==='__range')buildRange();
+  if(LIFE_H)lifeSetH();
   fillMonths();fillFilters();el('gen').textContent=tt('upd',D.generated);
   if(el('life-ctl').firstChild){el('life-ctl').innerHTML=lifeCtlHtml();lifeSync()}
   render();
 }
 function init(){
+  D0=D;if(KO())D=DKc=toKRW(D0);
   document.querySelectorAll('h2[data-ic]').forEach(h=>h.insertAdjacentHTML('afterbegin',ic(h.dataset.ic)));
   const sel=el('month'),sel2=el('month2');
   fillMonths();
@@ -766,7 +809,13 @@ function renderHero(){
   const T=D.asset_trend||{};const ams=D.months.filter(m=>T[m]&&m<=assetM()),am=ams.length?ams[ams.length-1]:null;const av=am?T[am].total_jpy:0;
   el('hero').innerHTML=hero(tt('net'),yen(net),complete(M)?tt('s_net'):tt('lg_budgetwait'),'net')+hero(tt('inc'),yen(inc),p&&complete(p)?delta(inc,D.income[p].total_jpy):tt('s_inc'),'income')+hero(tt('exp'),yen(exp),p&&complete(p)?delta(exp,D.expense[p].total_jpy):tt('s_exp'),'expense')+hero(tt('invest'),yen(inv),tt('s_invest'),'invest')+(am?hero(tt('h_invasset'),yen(av),am?(T[am].from_detail&&am===D.months[D.months.length-1]?tt('latestOf',mlabel(am)):tt('endOf',mlabel(am))):'','asset'):'')+HERO_ART;
 }
+function renderFx(){
+  const f=el('fxline');if(!KO()){f.textContent='';f.hidden=true;return}
+  const ms=D0.months,m=M==='__range'?ms[ms.length-1]:M;
+  f.hidden=false;f.textContent=tt('fxline',Math.round(10000/D0.fx[m]),parseInt(m.slice(5)),M==='__range');
+}
 function render(){
+  renderFx();
   try{renderOneline()}catch(e){}
   document.querySelectorAll('h2,.note').forEach(h=>{const n=[...h.childNodes].filter(x=>x.nodeType===3).pop();if(!n)return;if(!h.dataset.t)h.dataset.t=n.textContent;n.textContent=M==='__range'?h.dataset.t.replace(KO()?/이번 달/g:/今月/g,KO()?'선택 기간':'期間内'):h.dataset.t});
   renderHero();
@@ -794,7 +843,7 @@ function renderBudget(){
   const B=avg(baseIncome),FX=avg(m=>D.expense[m].fixed_jpy),V=avg(m=>D.expense[m].variable_jpy),T=avg(tripSpend);
   const cell=v=>`<b style="font:inherit;font-weight:800">${sg(v)}</b>`;
   el('n-outlook').textContent=tt('outlook',parseInt(cms[0].slice(5)),parseInt(cms[n-1].slice(5)),man(B),man(FX),man(V));
-  el('outlook').innerHTML=`<table><tr><th>${tt('o_nisa')}</th><th class="n">${tt('o_th')}</th></tr><tr><td>${tt('o_keep')}</td><td class="n">${cell(B-FX-V-200000)}</td></tr><tr><td>${tt('o_cut')}</td><td class="n">${cell(B-FX-V-100000)}</td></tr></table>
+  el('outlook').innerHTML=`<table><tr><th>${tt('o_nisa')}</th><th class="n">${tt('o_th')}</th></tr><tr><td>${tt('o_keep')}</td><td class="n">${cell(B-FX-V-TH(200000))}</td></tr><tr><td>${tt('o_cut')}</td><td class="n">${cell(B-FX-V-TH(100000))}</td></tr></table>
    <p class="note" style="margin-top:10px">${tt('o_note')}</p>`;
 }
 function renderSummary(){
@@ -827,7 +876,7 @@ function renderSummary(){
     +`<div class="bar" style="cursor:default;border-bottom:0"><span class="k" style="font-weight:700">${tt('total')}</span><div></div><span class="v" style="font-weight:800">${yen(fixedTotal)}<small></small></span></div>`;
   const p=prev(M);
   if(p&&complete(p)){const a=D.expense[M].by_category,b=D.expense[p].by_category;const keys=new Set([...Object.keys(a),...Object.keys(b)]);
-    const diff=[...keys].map(k=>[k,(a[k]||0)-(b[k]||0)]).filter(([,v])=>Math.abs(v)>=5000).sort((x,y)=>Math.abs(y[1])-Math.abs(x[1])).slice(0,6);
+    const diff=[...keys].map(k=>[k,(a[k]||0)-(b[k]||0)]).filter(([,v])=>Math.abs(v)>=TH(5000)).sort((x,y)=>Math.abs(y[1])-Math.abs(x[1])).slice(0,6);
     el('s-diff').style.display='';el('b-diff').innerHTML=diff.length?diff.map(([k,v])=>`<div class="bar" style="cursor:default"><span class="k">${ic(k)}${ja(k,CAT)}</span><div><div class="t" style="width:${Math.abs(v)/Math.abs(diff[0][1])*100}%;background:${v>0?'var(--pos)':'var(--neg)'}"></div></div><span class="v">${sg(v)}<small></small></span></div>`).join(''):'<div class="empty">'+tt('noBig')+'</div>';
   } else el('s-diff').style.display='none';
 }
@@ -847,9 +896,9 @@ function renderOneline(){
   if(!complete(M)){el('oneline').innerHTML=tt('oneWait',lbl,yen(exp));return}
   const pn=v=>v>=0?tt('surplus',yen(v)):tt('deficit',yen(-v));
   const tr=D.transactions.filter(t=>t.trip&&inM(t.month));const tSum=tr.reduce((a,t)=>a+t.jpy,0);
-  if(tSum>=30000){const names=[...new Set(tr.map(t=>t.trip))].join(tt('dot'));el('oneline').innerHTML=tt('oneTrip',lbl,pn(net),names,yen(tSum));return}
+  if(tSum>=TH(30000)){const names=[...new Set(tr.map(t=>t.trip))].join(tt('dot'));el('oneline').innerHTML=tt('oneTrip',lbl,pn(net),names,yen(tSum));return}
   const p=prev(M);if(p){const a=D.expense[M].by_category,b=D.expense[p].by_category;const d=Object.keys({...a,...b}).map(k=>[k,(a[k]||0)-(b[k]||0)]).filter(([k])=>!['경비정산','가족정산'].includes(k)).sort((x,y)=>Math.abs(y[1])-Math.abs(x[1]))[0];
-    if(d&&Math.abs(d[1])>=10000){el('oneline').innerHTML=tt('oneDiff',lbl,pn(net),ja(d[0],CAT),sg(d[1]));return}}
+    if(d&&Math.abs(d[1])>=TH(10000)){el('oneline').innerHTML=tt('oneDiff',lbl,pn(net),ja(d[0],CAT),sg(d[1]));return}}
   el('oneline').innerHTML=tt('oneBase',lbl,pn(net));
 }
 function renderExpense(){
@@ -887,7 +936,7 @@ function renderIncome(){
     +fig(tt('avgM'),yen(avgM),tt('avgS',cms2.length))
     +fig(tt('ytd'),yen(ytd),tt('ytdR',endM().slice(0,4),parseInt(endM().slice(5))))
     +fig(tt('krwPart'),yen(krwJ),krwW?tt('krwConv',krw(krwW)):tt('noThisMonth'));
-  bars('b-inc',Object.entries(inc.by_source).map(([k,v])=>[k,v.jpy]).sort((a,b)=>b[1]-a[1]),inc.total_jpy,{label:k=>ja(k,INC)+((inc.by_source[k]||{}).krw?`<span style="color:var(--ink3);font-size:11px;margin-left:8px;font-weight:400">${krw(inc.by_source[k].krw)}</span>`:''),field:'__none'});
+  bars('b-inc',Object.entries(inc.by_source).map(([k,v])=>[k,v.jpy]).sort((a,b)=>b[1]-a[1]),inc.total_jpy,{label:k=>ja(k,INC)+((inc.by_source[k]||{}).krw&&!KO()?`<span style="color:var(--ink3);font-size:11px;margin-left:8px;font-weight:400">${krw(inc.by_source[k].krw)}</span>`:''),field:'__none'});
   el('b-inc').querySelectorAll('.bar').forEach(b=>{b.style.cursor='default';b.onclick=null});
   el('b-inc').insertAdjacentHTML('beforeend',`<div class="bar" style="cursor:default;border-bottom:0"><span class="k" style="font-weight:700">${tt('total')}</span><div></div><span class="v" style="font-weight:800">${yen(inc.total_jpy)}<small></small></span></div>`);
   const ims=ms.filter(complete);el('s-inc-trend').hidden=ims.length<2;
@@ -941,7 +990,7 @@ function lifeGroup(items){
 function lifeMonths(ctx){return (ctx.endY-ctx.y0)*12+(ctx.endM-ctx.m0)}
 function lifeContrib(ctx,L,t){
   const mm=ctx.m0-1+t,y=ctx.y0+Math.floor(mm/12);
-  return y<2027?{s:100000,f:100000}:{s:L.save,f:0};
+  const f=ctx.cf||1;return y<2027?{s:100000*f,f:100000*f}:{s:L.save*f,f:0};
 }
 function lifeSim(h,ctx,L){
   const n=lifeMonths(ctx),bal={},rm={};
@@ -958,16 +1007,19 @@ function lifeSim(h,ctx,L){
 function lifeRun(h,ctx,L){return lifeSim(h,ctx,L)}
 function lifeOku(v){
   const m=Math.round(v/10000),o=Math.floor(m/10000),r=m%10000;
-  if(LANG==='ko'){if(o>0)return o+'억'+(r?' '+r.toLocaleString()+'만':'')+'엔';return m.toLocaleString()+'만엔'}
+  if(LANG==='ko'){if(o>0)return o+'억'+(r?' '+r.toLocaleString()+'만':'')+'원';return m.toLocaleString()+'만원'}
   if(o>0)return o+'億'+(r?r.toLocaleString()+'万':'')+'円';
   return m.toLocaleString()+'万円'
 }
-function lifeMan(v){return Math.round(v/10000).toLocaleString()+(LANG==='ko'?'만엔':'万円')}
+function lifeMan(v){return Math.round(v/10000).toLocaleString()+(LANG==='ko'?'만원':'万円')}
+function lifeSaveLbl(v){return KO()?`${(v/10000).toLocaleString(undefined,{maximumFractionDigits:1})}만엔(약 ${Math.round(v*100/ARATE()/10000).toLocaleString()}만원)`:lifeMan(v)}
 /*LIFE-CALC-END*/
 let LIFE=null,LIFE_CTX=null,LIFE_DEFAULT=null,LIFE_H=null;
+function lifeAm(){const dms=Object.keys(D.assets||{}).filter(k=>k!=='__range').sort();return dms[dms.length-1]}
+function lifeSetH(){const am=lifeAm();LIFE_H=lifeGroup(am?D.assets[am].items:[])}
 function lifeInit(){
-  const dms=Object.keys(D.assets||{}).sort(),am=dms[dms.length-1];
-  LIFE_H=lifeGroup(am?D.assets[am].items:[]);
+  const am=lifeAm();
+  lifeSetH();
   LIFE_CTX={y0:am?Number(am.slice(0,4)):2026,m0:am?Number(am.slice(5,7)):10,endY:2047,endM:5,age0:am?(Number(am.slice(0,4))-1987-(Number(am.slice(5,7))<5?1:0)):39};
   LIFE_DEFAULT=lifeDef();LIFE=Object.assign({},LIFE_DEFAULT);
   try{const s=JSON.parse(localStorage.getItem(LIFE_KEY)||'null');if(s)Object.keys(LIFE_DEFAULT).forEach(k=>{if(typeof s[k]==='number')LIFE[k]=s[k]})}catch(e){}
@@ -1004,7 +1056,7 @@ function lifeSync(){
   c.querySelectorAll('[data-k]').forEach(i=>{
     const k=i.dataset.k,v=LIFE[k];
     if(i!==act)i.value=Math.round(v/Number(i.dataset.sc)*100)/100;
-    const lv=el('lv-'+k);if(lv)lv.textContent=k==='save'?tt('lvSave',(v/10000).toLocaleString(undefined,{maximumFractionDigits:1})):v.toLocaleString(undefined,{maximumFractionDigits:1})+'%';
+    const lv=el('lv-'+k);if(lv)lv.textContent=k==='save'?tt('lvSave',(v/10000).toLocaleString(undefined,{maximumFractionDigits:1}),Math.round(v*100/ARATE()/10000).toLocaleString()):v.toLocaleString(undefined,{maximumFractionDigits:1})+'%';
   });
   c.querySelectorAll('button[data-save]').forEach(b=>b.classList.toggle('on',LIFE.save===Number(b.dataset.save)*10000));
 }
@@ -1018,7 +1070,7 @@ function renderLife(){
   lifeRender();
 }
 function lifeRender(){
-  const ctx=LIFE_CTX,L=LIFE,B=lifeRun(LIFE_H,ctx,L);
+  const ctx=Object.assign({},LIFE_CTX,{cf:KO()?100/ARATE():1}),L=LIFE,B=lifeRun(LIFE_H,ctx,L);
   const idx=LIFE_H.map((_,i)=>i).filter(i=>LIFE_H[i].v>0||B.last[i]>0.5);
   const h=idx.map(i=>LIFE_H[i]),last=idx.map(i=>B.last[i]);
   const nowTot=h.reduce((a,b)=>a+b.v,0),prin=h.reduce((a,b)=>a+b.p,0);
@@ -1038,7 +1090,7 @@ function lifeRender(){
   el('lg-life').innerHTML=h.map((b,j)=>`<span><i style="--sw:${cols[j]};opacity:${op[j]}"></i>${lname(b.name)}</span>`).join('')+`<span style="color:var(--ink3)">${tt('axisMan')}</span>`;
   const ex=h.map(b=>`<tr><td>${lname(b.name)}</td><td class="n">${b.r}%</td></tr>`).join('');
   el('life-how').innerHTML=`<div class="tablewrap" style="max-height:none"><table><thead><tr><th>${tt('how_th')}</th><th class="n">${tt('how_ret')}</th></tr></thead><tbody>${ex}</tbody></table></div><ul>
-    <li>${tt('how1',lifeMan(L.save))}</li>
+    <li>${tt('how1',lifeSaveLbl(L.save),lifeSaveLbl(100000))}</li>
     <li>${tt('how2')}</li>
     <li>${tt('how3',(B.years).toFixed(1),L.infl)}</li>
     <li>${tt('how4')}</li>
@@ -1118,7 +1170,7 @@ function renderTx(){
   const rows=D.transactions.filter(t=>(all||inM(t.month))&&(!c||t.category===c)&&(!s||t.source===s)&&(!q||t.name.toLowerCase().includes(q)));
   const sum=rows.reduce((a,t)=>a+t.jpy,0);
   el('t-tx').innerHTML='<tr><th>'+tt('th_date')+'</th><th>'+tt('th_merch')+'</th><th>'+tt('th_class')+'</th><th>'+tt('th_pay')+'</th><th class="n">'+tt('th_amt')+'</th></tr>'
-    +rows.slice(0,1500).map(t=>`<tr><td class="muted">${t.date.endsWith('--')?tt('tx_monthly',t.date.slice(0,7)):t.date}</td><td class="name">${dn(t)}</td><td><span class="k" style="display:inline-flex;align-items:center;gap:6px">${ic(t.category)}${ja(t.category,CAT)}</span></td><td class="muted">${ja(t.source,SRC)}</td><td class="n">${yen(t.jpy)}${t.currency==='KRW'?`<span style="color:var(--ink3);font-size:11px;margin-left:6px">${krw(t.amount)}</span>`:''}</td></tr>`).join('')
+    +rows.slice(0,1500).map(t=>`<tr><td class="muted">${t.date.endsWith('--')?tt('tx_monthly',t.date.slice(0,7)):t.date}</td><td class="name">${dn(t)}</td><td><span class="k" style="display:inline-flex;align-items:center;gap:6px">${ic(t.category)}${ja(t.category,CAT)}</span></td><td class="muted">${ja(t.source,SRC)}</td><td class="n">${yen(t.jpy)}${t.currency==='KRW'&&!KO()?`<span style="color:var(--ink3);font-size:11px;margin-left:6px">${krw(t.amount)}</span>`:''}</td></tr>`).join('')
     +`<tr class="total"><td colspan="4">${tt('cnt',rows.length)}</td><td class="n">${yen(sum)}</td></tr>`;
 }
 
